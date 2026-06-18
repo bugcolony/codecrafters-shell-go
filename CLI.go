@@ -64,7 +64,7 @@ func (cli *CLI) Run() {
 			if _, exists := cli.BuiltinCommands()[arg]; exists {
 				fmt.Fprintf(cli.out, "%s is a shell builtin\n", arg)
 			} else {
-				cli.printNotFound(arg)
+				fmt.Fprintf(cli.out, "%s: not found\n", arg)
 			}
 		default:
 			cli.printNotFound(cmd)
