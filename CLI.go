@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"strings"
 )
 
 type CLI struct {
@@ -22,13 +23,23 @@ func (cli *CLI) Run() {
 	for {
 		fmt.Fprint(cli.out, "$ ")
 
-		inputCommand := cli.ReadLine()
+		inputLine := strings.Split(cli.ReadLine(), " ")
 
-		if inputCommand == "exit" {
-			return
+		if len(inputLine) == 0 {
+			continue
 		}
 
-		fmt.Fprintf(cli.out, "%s: command not found\n", inputCommand)
+		cmd := inputLine[0]
+
+		switch cmd {
+		case "exit":
+			return
+		case "echo":
+			fmt.Fprintln(cli.out, strings.Join(inputLine[1:], " "))
+		default:
+			fmt.Fprintf(cli.out, "%s: command not found\n", cmd)
+		}
+
 	}
 }
 
