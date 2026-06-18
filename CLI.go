@@ -24,9 +24,9 @@ func (cli *CLI) Run() {
 
 		inputCommand := cli.ReadLine()
 
-		//if inputCommand == "exit" {
-		//	return
-		//}
+		if inputCommand == "exit" {
+			return
+		}
 
 		fmt.Fprintf(cli.out, "%s: command not found\n", inputCommand)
 	}
