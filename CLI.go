@@ -19,6 +19,24 @@ func NewCLI(in io.Reader, out io.Writer) *CLI {
 	}
 }
 
+func (cli *CLI) BuiltinCommands() map[string]bool {
+	return map[string]bool{
+		"echo": true,
+		"type": true,
+		"exit": true,
+	}
+}
+
+func (cli *CLI) CommandExists(cmd string) bool {
+	_, exist := cli.BuiltinCommands()[cmd]
+
+	return exist
+}
+
+func (cli *CLI) printNotFound(cmd string) {
+	fmt.Fprintf(cli.out, "%s: command not found\n", cmd)
+}
+
 func (cli *CLI) Run() {
 	for {
 		fmt.Fprint(cli.out, "$ ")
@@ -36,8 +54,20 @@ func (cli *CLI) Run() {
 			return
 		case "echo":
 			fmt.Fprintln(cli.out, strings.Join(inputLine[1:], " "))
+		case "type":
+			if len(inputLine) < 2 {
+				continue
+			}
+
+			arg := strings.TrimSpace(inputLine[1])
+
+			if _, exists := cli.BuiltinCommands()[arg]; exists {
+				fmt.Fprintf(cli.out, "%s is a shell builtin\n", arg)
+			} else {
+				cli.printNotFound(arg)
+			}
 		default:
-			fmt.Fprintf(cli.out, "%s: command not found\n", cmd)
+			cli.printNotFound(cmd)
 		}
 
 	}
