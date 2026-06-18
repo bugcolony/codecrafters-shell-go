@@ -19,7 +19,7 @@ func NewCLI(in io.Reader, out io.Writer) *CLI {
 }
 
 func (cli *CLI) Run() {
-	fmt.Fprint(cli.out, "$")
+	fmt.Fprint(cli.out, "$ ")
 
 	cli.in.Scan()
 

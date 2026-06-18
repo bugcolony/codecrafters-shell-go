@@ -14,8 +14,11 @@ func TestCLI(t *testing.T) {
 
 		cli.Run()
 
-		if out.String() != "$" {
-			t.Error("expected $, got ", out.String())
+		want := "$ "
+		got := out.String()
+
+		if !strings.HasPrefix(got, want) {
+			t.Errorf("expected %q to be prefixed with %q", got, want)
 		}
 	})
 
@@ -23,7 +26,7 @@ func TestCLI(t *testing.T) {
 		out := &bytes.Buffer{}
 		in := strings.NewReader("xyz")
 		cli := NewCLI(in, out)
-		want := "$xyz: command not found\n"
+		want := "$ xyz: command not found\n"
 
 		cli.Run()
 
