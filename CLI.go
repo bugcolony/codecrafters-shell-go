@@ -19,11 +19,21 @@ func NewCLI(in io.Reader, out io.Writer) *CLI {
 }
 
 func (cli *CLI) Run() {
-	fmt.Fprint(cli.out, "$ ")
+	for {
+		fmt.Fprint(cli.out, "$ ")
 
+		inputCommand := cli.ReadLine()
+
+		//if inputCommand == "exit" {
+		//	return
+		//}
+
+		fmt.Fprintf(cli.out, "%s: command not found\n", inputCommand)
+	}
+}
+
+func (cli *CLI) ReadLine() string {
 	cli.in.Scan()
 
-	inputCommand := cli.in.Text()
-
-	fmt.Fprintf(cli.out, "%s: command not found\n", inputCommand)
+	return cli.in.Text()
 }
