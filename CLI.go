@@ -113,14 +113,14 @@ func (cli *CLI) Run() {
 		default:
 			extCmd := strings.TrimSpace(inputLine[0])
 
-			if path, exist := cli.pathLookup(extCmd); exist {
+			if _, exist := cli.pathLookup(extCmd); exist {
 				var arguments []string
 
 				if len(inputLine) > 1 {
 					arguments = inputLine[1:]
 				}
 
-				cli.RunCommand(path, arguments)
+				cli.RunCommand(extCmd, arguments)
 			} else {
 				cli.printNotFound(cmd)
 			}
