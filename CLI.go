@@ -2,10 +2,8 @@ package codecrafters_shell_go
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -67,6 +65,18 @@ func (cli *CLI) pathLookup(cmd string) (string, bool) {
 	return "", false
 }
 
+func (cli *CLI) RunCommand(cmd string, args []string) error {
+	output, err := exec.Command(cmd, args...).Output()
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintln(cli.out, string(output))
+
+	return nil
+}
+
 func (cli *CLI) Run() {
 	for {
 		fmt.Fprint(cli.out, "$ ")
@@ -109,15 +119,8 @@ func (cli *CLI) Run() {
 				if len(inputLine) > 1 {
 					arguments = inputLine[1:]
 				}
-				command := exec.Command(path, arguments...)
 
-				if errors.Is(command.Err, exec.ErrDot) {
-					command.Err = nil
-				}
-
-				if err := command.Run(); err != nil {
-					log.Fatal(err)
-				}
+				cli.RunCommand(path, arguments)
 			} else {
 				cli.printNotFound(cmd)
 			}
