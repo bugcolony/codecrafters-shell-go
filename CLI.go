@@ -27,6 +27,7 @@ func (cli *CLI) BuiltinCommands() map[string]bool {
 		"echo": true,
 		"type": true,
 		"exit": true,
+		"pwd":  true,
 	}
 }
 
@@ -94,6 +95,12 @@ func (cli *CLI) Run() {
 			return
 		case "echo":
 			fmt.Fprintln(cli.out, strings.Join(inputLine[1:], " "))
+		case "pwd":
+			dir, err := os.Getwd()
+			if err != nil {
+				fmt.Fprintln(cli.out, err)
+			}
+			fmt.Fprintln(cli.out, dir)
 		case "type":
 			if len(inputLine) < 2 {
 				continue
