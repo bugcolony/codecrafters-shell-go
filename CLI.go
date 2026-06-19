@@ -2,9 +2,12 @@ package codecrafters_shell_go
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -40,6 +43,7 @@ func (cli *CLI) printNotFound(cmd string) {
 }
 
 func (cli *CLI) pathLookup(cmd string) (string, bool) {
+	// or just use exec.LookPath(cmd)
 	path := os.Getenv("PATH")
 
 	dirs := strings.Split(path, string(os.PathListSeparator))
@@ -97,7 +101,26 @@ func (cli *CLI) Run() {
 				}
 			}
 		default:
-			cli.printNotFound(cmd)
+			extCmd := strings.TrimSpace(inputLine[0])
+
+			if path, exist := cli.pathLookup(extCmd); exist {
+				var arguments []string
+
+				if len(inputLine) > 1 {
+					arguments = inputLine[1:]
+				}
+				command := exec.Command(path, arguments...)
+
+				if errors.Is(command.Err, exec.ErrDot) {
+					command.Err = nil
+				}
+
+				if err := command.Run(); err != nil {
+					log.Fatal(err)
+				}
+			} else {
+				cli.printNotFound(cmd)
+			}
 		}
 
 	}
