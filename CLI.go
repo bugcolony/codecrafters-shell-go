@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -99,7 +100,20 @@ func (cli *CLI) Run() {
 		case "exit":
 			return
 		case "echo":
-			fmt.Fprintln(cli.out, strings.Join(inputLine[1:], " "))
+
+			input := strings.Join(inputLine[1:], " ")
+			input = strings.ReplaceAll(input, "''", "")
+
+			reg, err := regexp.Compile(`'[\w ]+'|(\w+)`)
+
+			if err != nil {
+				fmt.Fprintln(cli.out, err)
+			}
+
+			argComp := reg.FindAllString(input, -1)
+			output := strings.Join(argComp, " ")
+
+			fmt.Fprintln(cli.out, strings.ReplaceAll(output, "'", ""))
 		case "pwd":
 			dir, err := os.Getwd()
 
