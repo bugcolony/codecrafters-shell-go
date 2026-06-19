@@ -10,6 +10,10 @@ import (
 	"strings"
 )
 
+const (
+	homePathAlias = "~"
+)
+
 type CLI struct {
 	in  *bufio.Scanner
 	out io.Writer
@@ -111,6 +115,10 @@ func (cli *CLI) Run() {
 			}
 
 			path := inputLine[1]
+
+			if path == homePathAlias {
+				path = os.Getenv("HOME")
+			}
 
 			if err := os.Chdir(path); err != nil {
 				fmt.Fprintf(cli.out, "cd: %s: No such file or directory\n", path)
