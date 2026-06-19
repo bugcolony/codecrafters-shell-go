@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -37,6 +39,30 @@ func (cli *CLI) printNotFound(cmd string) {
 	fmt.Fprintf(cli.out, "%s: command not found\n", cmd)
 }
 
+func (cli *CLI) pathLookup(cmd string) (string, bool) {
+	path := os.Getenv("PATH")
+
+	dirs := strings.Split(path, string(os.PathListSeparator))
+
+	for _, dir := range dirs {
+		// check filesystem file exists and has x perm
+		fs, _ := os.ReadDir(dir)
+		for _, f := range fs {
+			fileInfo, err := f.Info()
+
+			if err != nil {
+				continue
+			}
+
+			if f.Name() == cmd && fileInfo.Mode()&0111 != 0 {
+				return filepath.Join(dir, f.Name()), true
+			}
+		}
+	}
+
+	return "", false
+}
+
 func (cli *CLI) Run() {
 	for {
 		fmt.Fprint(cli.out, "$ ")
@@ -64,7 +90,11 @@ func (cli *CLI) Run() {
 			if _, exists := cli.BuiltinCommands()[arg]; exists {
 				fmt.Fprintf(cli.out, "%s is a shell builtin\n", arg)
 			} else {
-				fmt.Fprintf(cli.out, "%s: not found\n", arg)
+				if path, exist := cli.pathLookup(arg); exist {
+					fmt.Fprintf(cli.out, "%s is %s\n", arg, path)
+				} else {
+					fmt.Fprintf(cli.out, "%s: not found\n", arg)
+				}
 			}
 		default:
 			cli.printNotFound(cmd)
