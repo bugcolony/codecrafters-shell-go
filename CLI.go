@@ -72,7 +72,7 @@ func (cli *CLI) RunCommand(cmd string, args []string) error {
 		return err
 	}
 
-	fmt.Fprintln(cli.out, string(output))
+	fmt.Fprintln(cli.out, strings.TrimSuffix(string(output), "\n"))
 
 	return nil
 }
