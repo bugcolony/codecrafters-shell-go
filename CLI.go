@@ -28,6 +28,7 @@ func (cli *CLI) BuiltinCommands() map[string]bool {
 		"type": true,
 		"exit": true,
 		"pwd":  true,
+		"cd":   true,
 	}
 }
 
@@ -97,10 +98,23 @@ func (cli *CLI) Run() {
 			fmt.Fprintln(cli.out, strings.Join(inputLine[1:], " "))
 		case "pwd":
 			dir, err := os.Getwd()
+
 			if err != nil {
 				fmt.Fprintln(cli.out, err)
 			}
+
 			fmt.Fprintln(cli.out, dir)
+
+		case "cd":
+			if len(inputLine) < 2 {
+				continue
+			}
+
+			path := inputLine[1]
+
+			if err := os.Chdir(path); err != nil {
+				fmt.Fprintf(cli.out, "cd: %s: No such file or directory\n", path)
+			}
 		case "type":
 			if len(inputLine) < 2 {
 				continue
