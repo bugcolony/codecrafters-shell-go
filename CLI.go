@@ -84,6 +84,26 @@ func (cli *CLI) RunCommand(cmd string, args []string) error {
 	return nil
 }
 
+func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
+	input := strings.Join(raw, " ")
+	input = strings.ReplaceAll(input, "''", "")
+
+	reg, err := regexp.Compile(`'[^']*'|(\S+)`)
+
+	if err != nil {
+		return nil, err
+	}
+
+	argComp := reg.FindAllString(input, -1)
+	output := make([]string, 0, len(argComp))
+
+	for _, arg := range argComp {
+		output = append(output, strings.ReplaceAll(arg, "'", ""))
+	}
+
+	return output, nil
+}
+
 func (cli *CLI) Run() {
 	for {
 		fmt.Fprint(cli.out, "$ ")
@@ -100,20 +120,13 @@ func (cli *CLI) Run() {
 		case "exit":
 			return
 		case "echo":
-
-			input := strings.Join(inputLine[1:], " ")
-			input = strings.ReplaceAll(input, "''", "")
-
-			reg, err := regexp.Compile(`'[\w ]+'|(\w+)`)
-
+			args, err := cli.sanitizeArguments(inputLine[1:])
 			if err != nil {
 				fmt.Fprintln(cli.out, err)
+				continue
 			}
 
-			argComp := reg.FindAllString(input, -1)
-			output := strings.Join(argComp, " ")
-
-			fmt.Fprintln(cli.out, strings.ReplaceAll(output, "'", ""))
+			fmt.Fprintf(cli.out, "%s\n", strings.Join(args, " "))
 		case "pwd":
 			dir, err := os.Getwd()
 
@@ -160,7 +173,7 @@ func (cli *CLI) Run() {
 				var arguments []string
 
 				if len(inputLine) > 1 {
-					arguments = inputLine[1:]
+					arguments, _ = cli.sanitizeArguments(inputLine[1:])
 				}
 
 				cli.RunCommand(extCmd, arguments)
