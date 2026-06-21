@@ -88,20 +88,20 @@ func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
 	input := strings.Join(raw, " ")
 	input = strings.ReplaceAll(input, "''", "")
 
-	reg, err := regexp.Compile(`'[^']*'|(\S+)`)
+	reg, err := regexp.Compile(`"([^"]*)"|'([^'"]*)'|([^\s'"]+)`) // ("[^"]*")|'[^'"]*'|(\S+)
 
 	if err != nil {
 		return nil, err
 	}
 
 	argComp := reg.FindAllString(input, -1)
-	output := make([]string, 0, len(argComp))
+	//output := make([]string, 0, len(argComp))
+	//
+	//for _, arg := range argComp {
+	//	output = append(output, strings.ReplaceAll(arg, "'", ""))
+	//}
 
-	for _, arg := range argComp {
-		output = append(output, strings.ReplaceAll(arg, "'", ""))
-	}
-
-	return output, nil
+	return argComp, nil
 }
 
 func (cli *CLI) Run() {
