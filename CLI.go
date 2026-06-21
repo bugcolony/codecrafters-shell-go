@@ -97,7 +97,7 @@ func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
 
 	argComp := reg.FindAllString(input, -1)
 	output := make([]string, 0, len(argComp))
-	fmt.Fprintf(cli.out, "%v\n", argComp)
+
 	for _, arg := range argComp {
 		output = append(output, strings.Trim(arg, "'\""))
 	}
