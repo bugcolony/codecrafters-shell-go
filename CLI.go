@@ -95,13 +95,13 @@ func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
 	}
 
 	argComp := reg.FindAllString(input, -1)
-	//output := make([]string, 0, len(argComp))
-	//
-	//for _, arg := range argComp {
-	//	output = append(output, strings.ReplaceAll(arg, "'", ""))
-	//}
+	output := make([]string, 0, len(argComp))
 
-	return argComp, nil
+	for _, arg := range argComp {
+		output = append(output, strings.Trim(arg, "'\""))
+	}
+
+	return output, nil
 }
 
 func (cli *CLI) Run() {
