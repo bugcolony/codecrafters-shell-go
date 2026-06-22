@@ -98,6 +98,7 @@ func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
 	argComp = slices.CompactFunc(argComp, func(first, next string) bool {
 		return first == next && first == " "
 	})
+
 	output := make([]string, 0, len(argComp))
 
 	for _, arg := range argComp {
@@ -117,7 +118,7 @@ func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
 		}
 
 		output = append(output, arg)
-	}
+	})
 
 	return output, nil
 }
@@ -125,6 +126,13 @@ func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
 func (cli *CLI) trimRemove(base, trim, remove string) string {
 	output := strings.Trim(base, trim)
 	output = strings.ReplaceAll(output, remove, "")
+
+	return output
+}
+
+func (cli *CLI) consolidate(args []string) []string {
+	consolidated := strings.Join(args, "")
+	output := strings.Split(consolidated, " ")
 
 	return output
 }
@@ -199,6 +207,7 @@ func (cli *CLI) Run() {
 
 				if len(inputLine) > 1 {
 					arguments, _ = cli.sanitizeArguments(inputLine[1:])
+					arguments = cli.consolidate(arguments)
 				}
 
 				cli.RunCommand(extCmd, arguments)
