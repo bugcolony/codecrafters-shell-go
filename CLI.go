@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -86,23 +87,46 @@ func (cli *CLI) RunCommand(cmd string, args []string) error {
 
 func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
 	input := strings.Join(raw, " ")
-	input = strings.ReplaceAll(input, "''", "")
-	input = strings.ReplaceAll(input, "\"\"", "")
 
-	reg, err := regexp.Compile(`"([^"]*)"|'([^'"]*)'|([^\s'"]+)`) // ("[^"]*")|'[^'"]*'|(\S+)
+	reg, err := regexp.Compile(`\\.|("([^"]*)")+|('([^'"]*)')+|([^\s\\'"]+)| `)
 
 	if err != nil {
 		return nil, err
 	}
 
 	argComp := reg.FindAllString(input, -1)
+	argComp = slices.CompactFunc(argComp, func(first, next string) bool {
+		return first == next && first == " "
+	})
 	output := make([]string, 0, len(argComp))
 
 	for _, arg := range argComp {
-		output = append(output, strings.Trim(arg, "'\""))
+		if strings.HasPrefix(arg, "\\") {
+			output = append(output, strings.TrimPrefix(arg, "\\"))
+			continue
+		}
+
+		if strings.HasPrefix(arg, "'") {
+			output = append(output, cli.trimRemove(arg, "'", "\""))
+			continue
+		}
+
+		if strings.HasPrefix(arg, "\"") {
+			output = append(output, cli.trimRemove(arg, "\"", "'"))
+			continue
+		}
+
+		output = append(output, arg)
 	}
 
 	return output, nil
+}
+
+func (cli *CLI) trimRemove(base, trim, remove string) string {
+	output := strings.Trim(base, trim)
+	output = strings.ReplaceAll(output, remove, "")
+
+	return output
 }
 
 func (cli *CLI) Run() {
@@ -127,7 +151,7 @@ func (cli *CLI) Run() {
 				continue
 			}
 
-			fmt.Fprintf(cli.out, "%s\n", strings.Join(args, " "))
+			fmt.Fprintf(cli.out, "%s\n", strings.Join(args, ""))
 		case "pwd":
 			dir, err := os.Getwd()
 
