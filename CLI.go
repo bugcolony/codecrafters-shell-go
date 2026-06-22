@@ -108,12 +108,12 @@ func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
 		}
 
 		if strings.HasPrefix(arg, "'") {
-			output = append(output, cli.trimRemove(arg, "'", "\""))
+			output = append(output, strings.ReplaceAll(arg, "'", ""))
 			continue
 		}
 
 		if strings.HasPrefix(arg, "\"") {
-			output = append(output, cli.trimRemove(arg, "\"", "'"))
+			output = append(output, strings.ReplaceAll(arg, "\"", ""))
 			continue
 		}
 
@@ -121,13 +121,6 @@ func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
 	}
 
 	return output, nil
-}
-
-func (cli *CLI) trimRemove(base, trim, remove string) string {
-	output := strings.Trim(base, trim)
-	output = strings.ReplaceAll(output, remove, "")
-
-	return output
 }
 
 func (cli *CLI) consolidate(args []string) []string {
