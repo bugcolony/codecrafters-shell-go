@@ -118,7 +118,7 @@ func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
 		}
 
 		output = append(output, arg)
-	})
+	}
 
 	return output, nil
 }
