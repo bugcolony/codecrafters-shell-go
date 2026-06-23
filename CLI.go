@@ -129,6 +129,7 @@ func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
 			}
 		}
 
+		// the debt is very technical in nature
 		if arg == " " {
 			if tokenBuilder.Len() > 0 {
 				output = append(output, tokenBuilder.String())
@@ -147,7 +148,7 @@ func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
 		output = append(output, tokenBuilder.String())
 	}
 
-	fmt.Fprintf(cli.out, "%#v\n%#v\n", argComp, output)
+	//fmt.Fprintf(cli.out, "%#v\n%#v\n", argComp, output)
 	return output, nil
 }
 
@@ -227,9 +228,9 @@ func (cli *CLI) Run() {
 
 				if len(inputLine) > 1 {
 					arguments, _ = cli.sanitizeArguments(inputLine[1:])
-					fmt.Fprintf(cli.out, "%#v\n", arguments)
+					//fmt.Fprintf(cli.out, "%#v\n", arguments)
 					arguments = cli.consolidate(arguments)
-					fmt.Fprintf(cli.out, "%#v\n", arguments)
+					//fmt.Fprintf(cli.out, "%#v\n", arguments)
 				}
 
 				err := cli.RunCommand(extCmd, arguments)
