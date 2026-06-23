@@ -7,8 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
-	"slices"
 	"strings"
 )
 
@@ -86,76 +84,13 @@ func (cli *CLI) RunCommand(cmd string, args []string) error {
 }
 
 func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
-	input := strings.Join(raw, " ")
-
-	reg, err := regexp.Compile(`\\.|("([^"]*)")+|('([^'"]*)')+|([^\s\\'"]+)| `)
+	tokens, err := ParseToTokens(raw)
 
 	if err != nil {
 		return nil, err
 	}
 
-	argComp := reg.FindAllString(input, -1)
-
-	argComp = slices.CompactFunc(argComp, func(first, next string) bool {
-		return first == next && first == " "
-	})
-
-	output := make([]string, 0, len(argComp))
-	tokenBuilder := strings.Builder{}
-
-	for _, arg := range argComp {
-		if strings.HasPrefix(arg, "\\") {
-			escaped := strings.TrimPrefix(arg, "\\")
-
-			tokenBuilder.WriteString(escaped)
-
-			continue
-		}
-
-		if strings.HasPrefix(arg, "\"") || strings.HasPrefix(arg, "'") {
-			if tokenBuilder.Len() > 0 {
-				output = append(output, tokenBuilder.String())
-				tokenBuilder.Reset()
-			}
-
-			if strings.HasPrefix(arg, "'") {
-				output = append(output, strings.ReplaceAll(arg, "'", ""))
-				continue
-			}
-
-			if strings.HasPrefix(arg, "\"") {
-				output = append(output, strings.ReplaceAll(arg, "\"", ""))
-				continue
-			}
-		}
-
-		// the debt is very technical in nature
-		if arg == " " {
-			if tokenBuilder.Len() > 0 {
-				output = append(output, tokenBuilder.String())
-			}
-
-			output = append(output, " ")
-
-			tokenBuilder.Reset()
-			continue
-		}
-
-		tokenBuilder.WriteString(arg)
-	}
-
-	if tokenBuilder.Len() > 0 {
-		output = append(output, tokenBuilder.String())
-	}
-
-	//fmt.Fprintf(cli.out, "%#v\n%#v\n", argComp, output)
-	return output, nil
-}
-
-func (cli *CLI) consolidate(args []string) []string {
-	return slices.DeleteFunc(args, func(s string) bool {
-		return s == " " || s == ""
-	})
+	return tokens, nil
 }
 
 func (cli *CLI) Run() {
@@ -189,7 +124,6 @@ func (cli *CLI) Run() {
 			}
 
 			fmt.Fprintln(cli.out, dir)
-
 		case "cd":
 			if len(inputLine) < 2 {
 				continue
@@ -227,10 +161,7 @@ func (cli *CLI) Run() {
 				var arguments []string
 
 				if len(inputLine) > 1 {
-					arguments, _ = cli.sanitizeArguments(inputLine[1:])
-					//fmt.Fprintf(cli.out, "%#v\n", arguments)
-					arguments = cli.consolidate(arguments)
-					//fmt.Fprintf(cli.out, "%#v\n", arguments)
+					arguments, _ = ParseToArguments(inputLine[1:])
 				}
 
 				err := cli.RunCommand(extCmd, arguments)
@@ -241,7 +172,6 @@ func (cli *CLI) Run() {
 				cli.printNotFound(cmd)
 			}
 		}
-
 	}
 }
 
