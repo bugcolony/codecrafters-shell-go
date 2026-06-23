@@ -95,39 +95,60 @@ func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
 	}
 
 	argComp := reg.FindAllString(input, -1)
+
 	argComp = slices.CompactFunc(argComp, func(first, next string) bool {
 		return first == next && first == " "
 	})
 
 	output := make([]string, 0, len(argComp))
+	tokenBuilder := strings.Builder{}
 
 	for _, arg := range argComp {
 		if strings.HasPrefix(arg, "\\") {
-			output = append(output, strings.TrimPrefix(arg, "\\"))
+			escaped := strings.TrimPrefix(arg, "\\")
+
+			tokenBuilder.WriteString(escaped)
+
 			continue
 		}
 
-		if strings.HasPrefix(arg, "'") {
-			output = append(output, strings.ReplaceAll(arg, "'", ""))
+		if strings.HasPrefix(arg, "\"") || strings.HasPrefix(arg, "'") {
+			if tokenBuilder.Len() > 0 {
+				output = append(output, tokenBuilder.String())
+				tokenBuilder.Reset()
+			}
+
+			if strings.HasPrefix(arg, "'") {
+				output = append(output, strings.ReplaceAll(arg, "'", ""))
+				continue
+			}
+
+			if strings.HasPrefix(arg, "\"") {
+				output = append(output, strings.ReplaceAll(arg, "\"", ""))
+				continue
+			}
+		}
+
+		if arg == " " {
+			output = append(output, tokenBuilder.String(), " ")
+			tokenBuilder.Reset()
 			continue
 		}
 
-		if strings.HasPrefix(arg, "\"") {
-			output = append(output, strings.ReplaceAll(arg, "\"", ""))
-			continue
-		}
+		tokenBuilder.WriteString(arg)
+	}
 
-		output = append(output, arg)
+	if tokenBuilder.Len() > 0 {
+		output = append(output, tokenBuilder.String())
 	}
 
 	return output, nil
 }
 
 func (cli *CLI) consolidate(args []string) []string {
-	consolidated := strings.Join(args, "")
-	output := strings.Split(consolidated, " ")
-
-	return output
+	return slices.DeleteFunc(args, func(s string) bool {
+		return s == " "
+	})
 }
 
 func (cli *CLI) Run() {
@@ -200,10 +221,15 @@ func (cli *CLI) Run() {
 
 				if len(inputLine) > 1 {
 					arguments, _ = cli.sanitizeArguments(inputLine[1:])
+					fmt.Fprintf(cli.out, "%#v\n", arguments)
 					arguments = cli.consolidate(arguments)
+					fmt.Fprintf(cli.out, "%#v\n", arguments)
 				}
 
-				cli.RunCommand(extCmd, arguments)
+				err := cli.RunCommand(extCmd, arguments)
+				if err != nil {
+					fmt.Fprintln(cli.out, err)
+				}
 			} else {
 				cli.printNotFound(cmd)
 			}
