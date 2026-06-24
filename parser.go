@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	TokenExpression = `\\.|("([^"]*)")+|('([^'"]*)')+|([^\s\\'"]+)| `
+	TokenExpression = `("([^"]*)")+|('([^']*)')+|([^\s\\'"]+)| |\\.`
+	//TokenExpression = `\\.|("([^"]*)")+|('([^'"]*)')+|([^\s\\'"]+)| `
 )
 
 func ParseToTokens(input []string) ([]string, error) {
