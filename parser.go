@@ -25,7 +25,7 @@ func ParseToTokens(input []string) ([]string, error) {
 
 	tokens = make([]string, 0, len(argComp))
 
-	tokenBuilder := strings.Builder{}
+	tokenBuilder := &strings.Builder{}
 
 	for _, arg := range argComp {
 		if strings.HasPrefix(arg, "\\") {
@@ -65,7 +65,7 @@ func ParseToTokens(input []string) ([]string, error) {
 	return tokens, nil
 }
 
-func appendToken(tokenBuilder strings.Builder, tokens []string) []string {
+func appendToken(tokenBuilder *strings.Builder, tokens []string) []string {
 	if tokenBuilder.Len() > 0 {
 		tokens = append(tokens, tokenBuilder.String())
 	}

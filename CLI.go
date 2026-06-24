@@ -14,6 +14,14 @@ const (
 	homePathAlias = "~"
 )
 
+var BuiltinCommands = map[string]bool{
+	"echo": true,
+	"type": true,
+	"exit": true,
+	"pwd":  true,
+	"cd":   true,
+}
+
 type CLI struct {
 	in  *bufio.Scanner
 	out io.Writer
@@ -26,18 +34,8 @@ func NewCLI(in io.Reader, out io.Writer) *CLI {
 	}
 }
 
-func (cli *CLI) BuiltinCommands() map[string]bool {
-	return map[string]bool{
-		"echo": true,
-		"type": true,
-		"exit": true,
-		"pwd":  true,
-		"cd":   true,
-	}
-}
-
 func (cli *CLI) CommandExists(cmd string) bool {
-	_, exist := cli.BuiltinCommands()[cmd]
+	_, exist := BuiltinCommands[cmd]
 
 	return exist
 }
@@ -145,7 +143,7 @@ func (cli *CLI) Run() {
 
 			arg := strings.TrimSpace(inputLine[1])
 
-			if _, exists := cli.BuiltinCommands()[arg]; exists {
+			if _, exists := BuiltinCommands[arg]; exists {
 				fmt.Fprintf(cli.out, "%s is a shell builtin\n", arg)
 			} else {
 				if path, exist := cli.pathLookup(arg); exist {
