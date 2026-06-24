@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	TokenExpression = `("([^"]*)")+|('([^']*)')+|([^\s\\'"]+)| |\\.`
+	TokenExpression = `("((?:[^"\\]|\\["$\\` + "`" + `])*)")+|('([^']*)')+|([^\s\\'"]+)| |\\.`
+	//TokenExpression = `("([^"]*)")+|('([^']*)')+|([^\s\\'"]+)| |\\.`
 	//TokenExpression = `\\.|("([^"]*)")+|('([^'"]*)')+|([^\s\\'"]+)| `
 )
 
@@ -44,7 +45,12 @@ func ParseToTokens(input []string) ([]string, error) {
 
 			quote := []rune(arg)[0]
 
-			tokens = append(tokens, strings.ReplaceAll(arg, string(quote), ""))
+			if string(quote) == "\"" && strings.Contains(arg, "\\") {
+				tokens = append(tokens, escapeDoubleQuotedToken(arg))
+			} else {
+				tokens = append(tokens, strings.ReplaceAll(arg, string(quote), ""))
+			}
+
 			continue
 		}
 
@@ -74,6 +80,29 @@ func appendToken(tokenBuilder *strings.Builder, tokens []string) []string {
 	return tokens
 }
 
+func escapeDoubleQuotedToken(token string) string {
+	stack := strings.Split(strings.Trim(token, "\""), "")
+	escaped := strings.Builder{}
+	escapeNext := false
+
+	for _, char := range stack {
+		if escapeNext {
+			escaped.WriteString(char)
+			escapeNext = false
+			continue
+		}
+
+		if char == "\\" {
+			escapeNext = true
+			continue
+		}
+
+		escaped.WriteString(char)
+	}
+
+	return escaped.String()
+}
+
 func ParseToArguments(input []string) ([]string, error) {
 	output, err := ParseToTokens(input)
 
@@ -99,6 +128,8 @@ func compactValue(input []string, value string) []string {
 	})
 }
 
+// Function concat tokens if not separated by space
+// so that the slice can be consumed by command runner.
 func consolidateTokens(args []string) []string {
 	var tokens []string
 	stack := &strings.Builder{}
