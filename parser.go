@@ -100,7 +100,20 @@ func compactValue(input []string, value string) []string {
 }
 
 func consolidateTokens(args []string) []string {
-	return slices.DeleteFunc(args, func(s string) bool {
-		return s == " " || s == ""
-	})
+	var tokens []string
+	stack := &strings.Builder{}
+
+	for _, token := range args {
+		if token == " " {
+			tokens = appendToken(stack, tokens)
+			stack.Reset()
+			continue
+		}
+
+		stack.WriteString(token)
+	}
+
+	tokens = appendToken(stack, tokens)
+
+	return tokens
 }
