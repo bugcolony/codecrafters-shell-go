@@ -91,7 +91,9 @@ func (cli *CLI) Run() {
 			continue
 		}
 
-		commandLine, err := ParseToTokens(inputLine)
+		commandLine, err := ParseToArguments(inputLine)
+
+		//fmt.Fprintf(cli.out, "%#v\n", commandLine)
 
 		if err != nil {
 			continue
