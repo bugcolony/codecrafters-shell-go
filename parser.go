@@ -12,12 +12,10 @@ const (
 	//TokenExpression = `\\.|("([^"]*)")+|('([^'"]*)')+|([^\s\\'"]+)| `
 )
 
-func ParseToTokens(input []string) ([]string, error) {
+func ParseToTokens(input string) ([]string, error) {
 	var tokens []string
 
-	concat := strings.Join(input, " ")
-
-	argComp, err := splitToTokens(concat)
+	argComp, err := splitToTokens(input)
 
 	if err != nil {
 		return nil, err
@@ -103,13 +101,13 @@ func escapeDoubleQuotedToken(token string) string {
 	return escaped.String()
 }
 
-func ParseToArguments(input []string) ([]string, error) {
+func ParseToArguments(input string) ([]string, error) {
 	output, err := ParseToTokens(input)
 
 	if err != nil {
 		return nil, err
 	}
-	return consolidateTokens(output), nil
+	return ConsolidateTokens(output), nil
 }
 
 func splitToTokens(input string) ([]string, error) {
@@ -128,9 +126,9 @@ func compactValue(input []string, value string) []string {
 	})
 }
 
-// Function concat tokens if not separated by space
+// ConsolidateTokens Function concat tokens if not separated by space
 // so that the slice can be consumed by command runner.
-func consolidateTokens(args []string) []string {
+func ConsolidateTokens(args []string) []string {
 	var tokens []string
 	stack := &strings.Builder{}
 
