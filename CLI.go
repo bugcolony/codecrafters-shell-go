@@ -168,7 +168,7 @@ func (cli *CLI) Run() {
 					arguments, _ = ParseToArguments(inputLine[1:])
 				}
 
-				err := cli.RunCommand(extCmd, arguments)
+				err := cli.RunCommand("exe  with  space", arguments)
 				if err != nil {
 					fmt.Fprintln(cli.out, err)
 				}
