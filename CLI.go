@@ -70,16 +70,31 @@ func (cli *CLI) pathLookup(cmd string) (string, bool) {
 }
 
 func (cli *CLI) RunCommand(cmd string, args []string) error {
-	output, err := exec.Command(cmd, args...).Output()
+	command := exec.Command(cmd, args...)
+	var out strings.Builder
+	command.Stdout = &out
+	err := command.Run()
 
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintln(cli.out, strings.TrimSuffix(string(output), "\n"))
+	fmt.Fprintln(cli.out, strings.TrimSuffix(out.String(), "\n"))
 
 	return nil
 }
+
+//func (cli *CLI) RunCommand(cmd string, args []string) error {
+//	output, err := exec.Command(cmd, args...).Output()
+//
+//	if err != nil {
+//		return err
+//	}
+//
+//	fmt.Fprintln(cli.out, strings.TrimSuffix(string(output), "\n"))
+//
+//	return nil
+//}
 
 func (cli *CLI) sanitizeArguments(raw []string) ([]string, error) {
 	tokens, err := ParseToTokens(raw)
@@ -159,16 +174,14 @@ func (cli *CLI) Run() {
 				}
 			}
 		default:
-			extCmd := strings.TrimSpace(cmd)
-
-			if _, exist := cli.pathLookup(extCmd); exist {
+			if _, exist := cli.pathLookup(cmd); exist {
 				var arguments []string
 
 				if len(inputLine) > 1 {
 					arguments, _ = ParseToArguments(inputLine[1:])
 				}
 
-				err := cli.RunCommand("exe  with  space", arguments)
+				err := cli.RunCommand(cmd, arguments)
 				if err != nil {
 					fmt.Fprintln(cli.out, err)
 				}
