@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 )
 
@@ -46,27 +45,35 @@ func (cli *CLI) printNotFound(cmd string) {
 
 func (cli *CLI) pathLookup(cmd string) (string, bool) {
 	// or just use exec.LookPath(cmd)
-	path := os.Getenv("PATH")
 
-	dirs := strings.Split(path, string(os.PathListSeparator))
+	path, err := exec.LookPath(cmd)
 
-	for _, dir := range dirs {
-		// check filesystem file exists and has x perm
-		fs, _ := os.ReadDir(dir)
-		for _, f := range fs {
-			fileInfo, err := f.Info()
-
-			if err != nil {
-				continue
-			}
-
-			if f.Name() == cmd && fileInfo.Mode()&0111 != 0 {
-				return filepath.Join(dir, f.Name()), true
-			}
-		}
+	if err != nil {
+		return "", false
 	}
 
-	return "", false
+	return path, true
+	//path := os.Getenv("PATH")
+	//
+	//dirs := strings.Split(path, string(os.PathListSeparator))
+	//
+	//for _, dir := range dirs {
+	//	// check filesystem file exists and has x perm
+	//	fs, _ := os.ReadDir(dir)
+	//	for _, f := range fs {
+	//		fileInfo, err := f.Info()
+	//
+	//		if err != nil {
+	//			continue
+	//		}
+	//
+	//		if f.Name() == cmd && fileInfo.Mode()&0111 != 0 {
+	//			return filepath.Join(dir, f.Name()), true
+	//		}
+	//	}
+	//}
+	//
+	//return "", false
 }
 
 func (cli *CLI) RunCommand(cmd string, args []string) error {
