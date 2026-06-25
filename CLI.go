@@ -101,7 +101,7 @@ func (cli *CLI) Run() {
 			continue
 		}
 
-		command, err := ParseToArguments(inputLine[0:])
+		command, err := ParseToArguments(inputLine[0:1])
 
 		if err != nil {
 			continue
