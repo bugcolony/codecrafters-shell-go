@@ -101,7 +101,13 @@ func (cli *CLI) Run() {
 			continue
 		}
 
-		cmd := inputLine[0]
+		command, err := ParseToArguments(inputLine[0:])
+
+		if err != nil {
+			continue
+		}
+
+		cmd := command[0]
 
 		switch cmd {
 		case "exit":
