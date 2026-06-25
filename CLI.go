@@ -91,9 +91,7 @@ func (cli *CLI) Run() {
 			continue
 		}
 
-		commandLine, err := ParseToArguments(inputLine)
-
-		//fmt.Fprintf(cli.out, "%#v\n", commandLine)
+		commandLine, err := ParseToTokens(inputLine)
 
 		if err != nil {
 			continue
@@ -105,7 +103,7 @@ func (cli *CLI) Run() {
 		case "exit":
 			return
 		case "echo":
-			args := commandLine[1:]
+			args := commandLine[2:]
 
 			fmt.Fprintf(cli.out, "%s\n", strings.Join(args, ""))
 		case "pwd":
@@ -117,11 +115,11 @@ func (cli *CLI) Run() {
 
 			fmt.Fprintln(cli.out, dir)
 		case "cd":
-			if len(commandLine) < 2 {
+			if len(commandLine) < 3 {
 				continue
 			}
 
-			path := commandLine[1]
+			path := commandLine[2]
 
 			if path == homePathAlias {
 				path = os.Getenv("HOME")
@@ -131,11 +129,11 @@ func (cli *CLI) Run() {
 				fmt.Fprintf(cli.out, "cd: %s: No such file or directory\n", path)
 			}
 		case "type":
-			if len(commandLine) < 2 {
+			if len(commandLine) < 3 {
 				continue
 			}
 
-			arg := strings.TrimSpace(commandLine[1])
+			arg := strings.TrimSpace(commandLine[2])
 
 			if _, exists := BuiltinCommands[arg]; exists {
 				fmt.Fprintf(cli.out, "%s is a shell builtin\n", arg)
@@ -150,8 +148,8 @@ func (cli *CLI) Run() {
 			if _, exist := cli.pathLookup(cmd); exist {
 				var arguments []string
 
-				if len(inputLine) > 1 {
-					arguments = ConsolidateTokens(commandLine[1:])
+				if len(inputLine) > 2 {
+					arguments = ConsolidateTokens(commandLine[2:])
 				}
 
 				err := cli.RunCommand(cmd, arguments)
