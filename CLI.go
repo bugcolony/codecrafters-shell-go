@@ -166,5 +166,5 @@ func (cli *CLI) Run() {
 func (cli *CLI) ReadLine() string {
 	cli.in.Scan()
 
-	return cli.in.Text()
+	return strings.TrimSpace(cli.in.Text())
 }
