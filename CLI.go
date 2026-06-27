@@ -14,6 +14,7 @@ const (
 	homePathAlias          = "~"
 	RedirectOperator       = ">"
 	RedirectOperatorStdout = "1>"
+	RedirectOperatorStderr = "2>"
 )
 
 var BuiltinCommands = map[string]bool{
@@ -61,7 +62,7 @@ func (cli *CLI) pathLookup(cmd string) (string, bool) {
 	return path, true
 }
 
-func (cli *CLI) RunCommand(out io.Writer, cmd string, args []string) {
+func (cli *CLI) RunCommand(out io.Writer, errOut io.Writer, cmd string, args []string) {
 	command := exec.Command(cmd, args...)
 	output := strings.Builder{}
 	errorOutput := strings.Builder{}
@@ -70,7 +71,7 @@ func (cli *CLI) RunCommand(out io.Writer, cmd string, args []string) {
 	command.Stderr = &errorOutput
 
 	if err := command.Run(); err != nil {
-		fmt.Fprintf(cli.out, "%s", errorOutput.String())
+		fmt.Fprintf(errOut, "%s", errorOutput.String())
 	}
 
 	fmt.Fprintf(out, output.String())
@@ -102,7 +103,8 @@ func (cli *CLI) Run() {
 func (cli *CLI) runCommandLine(commandLine []string) bool {
 	var arguments []string
 
-	variableOutput := cli.out
+	variableStdout := cli.out
+	variableStderr := cli.out
 
 	commandParts := ConsolidateTokens(commandLine)
 
@@ -111,7 +113,7 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 
 	if slices.Contains(commandParts, RedirectOperator) || slices.Contains(commandParts, RedirectOperatorStdout) {
 		find := func(s string) bool {
-			return slices.Contains([]string{RedirectOperator, RedirectOperatorStdout}, s)
+			return slices.Contains([]string{RedirectOperator, RedirectOperatorStdout, RedirectOperatorStderr}, s)
 		}
 
 		partIdx := slices.IndexFunc(commandParts, find)
@@ -138,7 +140,14 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 		file.Truncate(0)
 		file.Seek(0, io.SeekStart)
 
-		variableOutput = file
+		if commandParts[partIdx] == RedirectOperatorStdout {
+			variableStdout = file
+		}
+
+		if commandParts[partIdx] == RedirectOperatorStderr {
+			variableStderr = file
+		}
+
 		commandLine = commandLine[:lineIdx-1]
 	}
 
@@ -152,7 +161,7 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 
 		stream := commandLine[2:]
 
-		fmt.Fprintf(variableOutput, "%s\n", strings.Join(stream, ""))
+		fmt.Fprintf(variableStdout, "%s\n", strings.Join(stream, ""))
 	case "pwd":
 		dir, err := os.Getwd()
 
@@ -160,7 +169,7 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 			fmt.Fprintln(cli.out, err)
 		}
 
-		fmt.Fprintln(variableOutput, dir)
+		fmt.Fprintln(variableStdout, dir)
 	case "cd":
 		if len(commandParts) < 2 {
 			return true
@@ -183,17 +192,17 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 		typeCmd := strings.TrimSpace(commandParts[1])
 
 		if _, exists := BuiltinCommands[typeCmd]; exists {
-			fmt.Fprintf(variableOutput, "%s is a shell builtin\n", typeCmd)
+			fmt.Fprintf(variableStdout, "%s is a shell builtin\n", typeCmd)
 		} else {
 			if path, exist := cli.pathLookup(typeCmd); exist {
-				fmt.Fprintf(variableOutput, "%s is %s\n", typeCmd, path)
+				fmt.Fprintf(variableStdout, "%s is %s\n", typeCmd, path)
 			} else {
-				fmt.Fprintf(variableOutput, "%s: not found\n", typeCmd)
+				fmt.Fprintf(variableStdout, "%s: not found\n", typeCmd)
 			}
 		}
 	default:
 		if _, exist := cli.pathLookup(cmd); exist {
-			cli.RunCommand(variableOutput, cmd, arguments)
+			cli.RunCommand(variableStdout, variableStderr, cmd, arguments)
 		} else {
 			cli.printNotFound(cmd)
 		}
