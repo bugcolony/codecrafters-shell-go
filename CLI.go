@@ -100,6 +100,8 @@ func (cli *CLI) Run() {
 		cmd := commandLine[0]
 		arguments = commandParts[1:]
 
+		fmt.Fprintf(cli.out, "pre: %#v\n", arguments)
+
 		if slices.Contains(commandParts, RedirectOperator) || slices.Contains(commandParts, RedirectOperatorStdout) {
 			find := func(s string) bool {
 				return slices.Contains([]string{RedirectOperator, RedirectOperatorStdout}, s)
@@ -130,6 +132,8 @@ func (cli *CLI) Run() {
 			redirectFile = file
 			commandLine = commandLine[:lineIdx-1]
 		}
+
+		fmt.Fprintf(cli.out, "post: %#v\n", arguments)
 
 		switch cmd {
 		case "exit":
