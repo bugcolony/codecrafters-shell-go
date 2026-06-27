@@ -13,8 +13,11 @@ import (
 const (
 	homePathAlias          = "~"
 	RedirectOperator       = ">"
+	RedirectAppend         = ">>"
 	RedirectOperatorStdout = "1>"
 	RedirectOperatorStderr = "2>"
+	RedirectAppendStdout   = "1>>"
+	RedirectAppendStderr   = "2>>"
 )
 
 var BuiltinCommands = map[string]bool{
@@ -23,11 +26,6 @@ var BuiltinCommands = map[string]bool{
 	"exit": true,
 	"pwd":  true,
 	"cd":   true,
-}
-
-var RedirectOperators = map[string]bool{
-	">":  true,
-	"1>": true,
 }
 
 type CLI struct {
@@ -110,14 +108,14 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 
 	cmd := commandLine[0]
 	arguments = commandParts[1:]
+	findRedirectOp := func(s string) bool {
+		return slices.Contains([]string{RedirectOperator, RedirectOperatorStdout, RedirectAppend, RedirectAppendStdout, RedirectOperatorStderr, RedirectAppendStderr}, s)
+	}
 
-	if slices.Contains(commandParts, RedirectOperator) || slices.Contains(commandParts, RedirectOperatorStdout) || slices.Contains(commandParts, RedirectOperatorStderr) {
-		find := func(s string) bool {
-			return slices.Contains([]string{RedirectOperator, RedirectOperatorStdout, RedirectOperatorStderr}, s)
-		}
-
-		partIdx := slices.IndexFunc(commandParts, find)
-		lineIdx := slices.IndexFunc(commandLine, find)
+	if slices.ContainsFunc(commandParts, findRedirectOp) {
+		partIdx := slices.IndexFunc(commandParts, findRedirectOp)
+		lineIdx := slices.IndexFunc(commandLine, findRedirectOp)
+		redirectOp := commandParts[partIdx]
 
 		if partIdx+1 >= len(commandParts) {
 			return true
@@ -127,6 +125,8 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 
 		if partIdx > 1 {
 			arguments = commandParts[1:partIdx]
+		} else {
+			arguments = []string{}
 		}
 
 		file, err := os.OpenFile(outTarget, os.O_RDWR|os.O_CREATE, 0666)
@@ -137,14 +137,23 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 
 		defer file.Close()
 
-		file.Truncate(0)
-		file.Seek(0, io.SeekStart)
+		if strings.Contains(redirectOp, RedirectAppend) {
+			file.Seek(0, io.SeekEnd)
+		} else {
+			file.Truncate(0)
+			file.Seek(0, io.SeekStart)
+		}
 
-		if commandParts[partIdx] == RedirectOperator || commandParts[partIdx] == RedirectOperatorStdout {
+		if slices.Contains([]string{
+			RedirectOperator,
+			RedirectOperatorStdout,
+			RedirectAppend,
+			RedirectAppendStdout,
+		}, redirectOp) {
 			variableStdout = file
 		}
 
-		if commandParts[partIdx] == RedirectOperatorStderr {
+		if redirectOp == RedirectOperatorStderr || redirectOp == RedirectAppendStderr {
 			variableStderr = file
 		}
 

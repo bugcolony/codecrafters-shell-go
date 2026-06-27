@@ -1,0 +1,14 @@
+yes
+total 44
+-rw-r--r-- 1 mkamtx mkamtx 4473 Jun 27 19:03 CLI.go
+-rw-r--r-- 1 mkamtx mkamtx  684 Jun 18 15:35 CLI_test.go
+-rw-r--r-- 1 mkamtx mkamtx 1297 Jun 18 13:59 README.md
+drwxr-xr-x 2 mkamtx mkamtx 4096 Jun 18 14:25 app
+-rw-r--r-- 1 mkamtx mkamtx  278 Jun 18 13:59 codecrafters.yml
+-rw-r--r-- 1 mkamtx mkamtx   62 Jun 18 13:59 go.mod
+-rw-r--r-- 1 mkamtx mkamtx    0 Jun 18 13:59 go.sum
+-rw-r--r-- 1 mkamtx mkamtx 3051 Jun 26 19:17 parser.go
+-rw-r--r-- 1 mkamtx mkamtx   30 Jun 23 20:54 parser_test.go
+-rw-r--r-- 1 mkamtx mkamtx    4 Jun 27 19:03 test.txt
+-rwxr-xr-x 1 mkamtx mkamtx  773 Jun 18 13:59 your_program.sh
+cat: baba: No such file or directory
