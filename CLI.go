@@ -98,6 +98,7 @@ func (cli *CLI) Run() {
 		commandParts := ConsolidateTokens(commandLine)
 
 		cmd := commandLine[0]
+		arguments = commandParts[1:]
 
 		if slices.Contains(commandParts, RedirectOperator) || slices.Contains(commandParts, RedirectOperatorStdout) {
 			find := func(s string) bool {
