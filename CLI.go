@@ -140,7 +140,7 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 		file.Truncate(0)
 		file.Seek(0, io.SeekStart)
 
-		if commandParts[partIdx] == RedirectOperatorStderr || commandParts[partIdx] == RedirectOperatorStdout {
+		if commandParts[partIdx] == RedirectOperator || commandParts[partIdx] == RedirectOperatorStdout {
 			variableStdout = file
 		}
 
