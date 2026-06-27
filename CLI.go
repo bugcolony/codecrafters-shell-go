@@ -61,16 +61,19 @@ func (cli *CLI) pathLookup(cmd string) (string, bool) {
 	return path, true
 }
 
-func (cli *CLI) RunCommand(out io.Writer, cmd string, args []string) error {
-	output, err := exec.Command(cmd, args...).Output()
+func (cli *CLI) RunCommand(out io.Writer, cmd string, args []string) {
+	command := exec.Command(cmd, args...)
+	output := strings.Builder{}
+	errorOutput := strings.Builder{}
 
-	if err != nil {
-		return err
+	command.Stdout = &output
+	command.Stderr = &errorOutput
+
+	if err := command.Run(); err != nil {
+		fmt.Fprintf(cli.out, "%s", errorOutput.String())
 	}
 
-	fmt.Fprintln(out, strings.TrimSuffix(string(output), "\n"))
-
-	return nil
+	fmt.Fprintf(out, output.String())
 }
 
 func (cli *CLI) Run() {
@@ -182,11 +185,7 @@ func (cli *CLI) Run() {
 			}
 		default:
 			if _, exist := cli.pathLookup(cmd); exist {
-				err := cli.RunCommand(variableOutput, cmd, arguments)
-
-				if err != nil {
-					fmt.Fprintln(cli.out, err)
-				}
+				cli.RunCommand(variableOutput, cmd, arguments)
 			} else {
 				cli.printNotFound(cmd)
 			}
