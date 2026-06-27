@@ -111,7 +111,7 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 	cmd := commandLine[0]
 	arguments = commandParts[1:]
 
-	if slices.Contains(commandParts, RedirectOperator) || slices.Contains(commandParts, RedirectOperatorStdout) {
+	if slices.Contains(commandParts, RedirectOperator) || slices.Contains(commandParts, RedirectOperatorStdout) || slices.Contains(commandParts, RedirectOperatorStderr) {
 		find := func(s string) bool {
 			return slices.Contains([]string{RedirectOperator, RedirectOperatorStdout, RedirectOperatorStderr}, s)
 		}
