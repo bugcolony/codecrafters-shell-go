@@ -35,6 +35,22 @@ var completer = readline.NewPrefixCompleter(
 	readline.PcItem("echo"),
 )
 
+type verboseCompleter struct {
+	inner    readline.AutoCompleter
+	readline *readline.Instance
+	stderr   io.Writer
+}
+
+func (w *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
+	newLine, offset := w.inner.Do(line, pos)
+
+	if len(newLine) == 0 {
+		fmt.Fprint(w.stderr, "\a")
+	}
+
+	return newLine, offset
+}
+
 type CLI struct {
 	in  *bufio.Scanner
 	out io.Writer
@@ -85,9 +101,8 @@ func (cli *CLI) RunCommand(out io.Writer, errOut io.Writer, cmd string, args []s
 func (cli *CLI) Run() {
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:          "$ ",
-		AutoComplete:    completer,
+		AutoComplete:    &verboseCompleter{inner: completer, stderr: os.Stderr},
 		InterruptPrompt: "^C",
-		EOFPrompt:       "exit",
 	})
 
 	if err != nil {
@@ -95,7 +110,6 @@ func (cli *CLI) Run() {
 	}
 
 	defer rl.Close()
-	rl.CaptureExitSignal()
 
 	for {
 		inputLine, err := rl.Readline()
