@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"slices"
 	"strings"
+
+	"github.com/chzyer/readline"
 )
 
 const (
@@ -27,6 +29,11 @@ var BuiltinCommands = map[string]bool{
 	"pwd":  true,
 	"cd":   true,
 }
+
+var completer = readline.NewPrefixCompleter(
+	readline.PcItem("exit"),
+	readline.PcItem("echo"),
+)
 
 type CLI struct {
 	in  *bufio.Scanner
@@ -76,10 +83,26 @@ func (cli *CLI) RunCommand(out io.Writer, errOut io.Writer, cmd string, args []s
 }
 
 func (cli *CLI) Run() {
-	for {
-		fmt.Fprint(cli.out, "$ ")
+	rl, err := readline.NewEx(&readline.Config{
+		Prompt:          "$ ",
+		AutoComplete:    completer,
+		InterruptPrompt: "^C",
+		EOFPrompt:       "exit",
+	})
 
-		inputLine := cli.ReadLine()
+	if err != nil {
+		panic(err)
+	}
+
+	defer rl.Close()
+	rl.CaptureExitSignal()
+
+	for {
+		inputLine, err := rl.Readline()
+
+		if err != nil {
+			break
+		}
 
 		if len(inputLine) == 0 {
 			continue
