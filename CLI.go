@@ -82,17 +82,9 @@ func searchPath() func(string) []string {
 
 		wg.Wait()
 
-		var result []string
-		listed := make(map[string]bool)
+		slices.Sort(candidates)
 
-		for _, candidate := range candidates {
-			if _, exists := listed[candidate]; !exists {
-				result = append(result, candidate)
-				listed[candidate] = true
-			}
-		}
-
-		return result
+		return slices.Compact(candidates)
 	}
 }
 
