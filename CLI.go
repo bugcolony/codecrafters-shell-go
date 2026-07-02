@@ -100,14 +100,24 @@ type verboseCompleter struct {
 	inner    readline.AutoCompleter
 	readline *readline.Instance
 	stderr   io.Writer
+	lastLine []rune
 }
 
-func (w *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
-	newLine, offset := w.inner.Do(line, pos)
+func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
+	newLine, offset := v.inner.Do(line, pos)
 
 	if len(newLine) == 0 {
-		fmt.Fprint(w.stderr, "\a")
+		fmt.Fprint(v.stderr, "\a")
 	}
+
+	if !slices.Equal(line, v.lastLine) && len(newLine) > 1 {
+		fmt.Fprint(v.stderr, "\a")
+		v.lastLine = line
+
+		return nil, 0
+	}
+
+	v.lastLine = line
 
 	return newLine, offset
 }
