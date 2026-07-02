@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GoProfileHistory">
+    <profile entry="C:\Users\marti\GoLandProfiles\go_build_github_com_codecrafters-io_shell-starter-go_app-cpu-2026-07-01-221228-625.pprof">
+      <GoProfileMapEntry>
+        <option name="buildAnchorMillis" value="1782933112710" />
+        <option name="file" value="go_build_github_com_codecrafters-io_shell-starter-go_app-cpu-2026-07-01-221228-625.pprof" />
+        <option name="ours" value="true" />
+        <option name="profileType" value="CPU" />
+      </GoProfileMapEntry>
+    </profile>
+  </component>
+</project>

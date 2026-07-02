@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/chzyer/readline"
 )
@@ -33,7 +34,67 @@ var BuiltinCommands = map[string]bool{
 var completer = readline.NewPrefixCompleter(
 	readline.PcItem("exit"),
 	readline.PcItem("echo"),
+	readline.PcItemDynamic(searchPath()),
 )
+
+func searchPath() func(string) []string {
+	return func(pattern string) []string {
+		var candidates []string
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+
+		path := os.Getenv("PATH")
+
+		dirs := strings.Split(path, string(os.PathListSeparator))
+
+		for _, dir := range dirs {
+			fs, err := os.ReadDir(dir)
+
+			if err != nil {
+				continue
+			}
+
+			wg.Go(func() {
+				var dirCandidates []string
+
+				for _, f := range fs {
+					if strings.HasPrefix(f.Name(), pattern) && !f.IsDir() {
+						fileInfo, err := f.Info()
+
+						if err != nil {
+							continue
+						}
+
+						if fileInfo.Mode()&0111 != 0 {
+							dirCandidates = append(dirCandidates, f.Name())
+						}
+					}
+				}
+
+				if len(dirCandidates) > 0 {
+					mu.Lock()
+					candidates = append(candidates, dirCandidates...)
+					mu.Unlock()
+				}
+			})
+
+		}
+
+		wg.Wait()
+
+		var result []string
+		listed := make(map[string]bool)
+
+		for _, candidate := range candidates {
+			if _, exists := listed[candidate]; !exists {
+				result = append(result, candidate)
+				listed[candidate] = true
+			}
+		}
+
+		return result
+	}
+}
 
 type verboseCompleter struct {
 	inner    readline.AutoCompleter
@@ -95,7 +156,7 @@ func (cli *CLI) RunCommand(out io.Writer, errOut io.Writer, cmd string, args []s
 		fmt.Fprintf(errOut, "%s", errorOutput.String())
 	}
 
-	fmt.Fprintf(out, output.String())
+	fmt.Fprint(out, output.String())
 }
 
 func (cli *CLI) Run() {
