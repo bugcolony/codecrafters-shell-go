@@ -38,7 +38,11 @@ var completer = readline.NewPrefixCompleter(
 )
 
 func searchPath() func(string) []string {
-	return func(pattern string) []string {
+	return func(command string) []string {
+		if command == "" {
+			return nil
+		}
+
 		var candidates []string
 		var wg sync.WaitGroup
 		var mu sync.Mutex
@@ -58,7 +62,7 @@ func searchPath() func(string) []string {
 				var dirCandidates []string
 
 				for _, f := range fs {
-					if strings.HasPrefix(f.Name(), pattern) && !f.IsDir() {
+					if strings.HasPrefix(f.Name(), command) && !f.IsDir() {
 						fileInfo, err := f.Info()
 
 						if err != nil {
@@ -96,15 +100,34 @@ type verboseCompleter struct {
 }
 
 func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
+	if len(line) == 0 {
+		return nil, 0
+	}
+
 	newLine, offset := v.inner.Do(line, pos)
 
 	if len(newLine) == 0 {
-		fmt.Fprint(v.stderr, "\a")
+		fmt.Fprint(v.readline.Stderr(), "\a")
 	}
 
 	if !slices.Equal(line, v.lastLine) && len(newLine) > 1 {
-		fmt.Fprint(v.stderr, "\a")
+		fmt.Fprint(v.readline.Stderr(), "\a")
 		v.lastLine = line
+
+		return nil, 0
+	}
+
+	if slices.Equal(line, v.lastLine) && len(newLine) > 1 {
+		v.lastLine = nil
+
+		var suggestions []string
+		input := string(line)
+
+		for _, line := range newLine {
+			suggestions = append(suggestions, input+string(line))
+		}
+
+		fmt.Fprintln(v.readline.Stdout(), strings.Join(suggestions, "  "))
 
 		return nil, 0
 	}
@@ -162,15 +185,22 @@ func (cli *CLI) RunCommand(out io.Writer, errOut io.Writer, cmd string, args []s
 }
 
 func (cli *CLI) Run() {
+
+	vc := &verboseCompleter{inner: completer, stderr: os.Stderr}
+
 	rl, err := readline.NewEx(&readline.Config{
 		Prompt:          "$ ",
-		AutoComplete:    &verboseCompleter{inner: completer, stderr: os.Stderr},
+		AutoComplete:    vc,
 		InterruptPrompt: "^C",
+		Stdout:          cli.out,
+		Stderr:          os.Stderr, // pass constructor
 	})
 
 	if err != nil {
 		panic(err)
 	}
+
+	vc.readline = rl
 
 	defer rl.Close()
 
