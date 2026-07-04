@@ -129,7 +129,7 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 
 		fmt.Fprintln(v.readline.Stdout(), strings.Join(suggestions, "  "))
 
-		return nil, 0
+		return [][]rune{line[offset:]}, offset
 	}
 
 	v.lastLine = line
