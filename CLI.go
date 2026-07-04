@@ -33,7 +33,7 @@ var BuiltinCommands = map[string]bool{
 
 var completer = readline.NewPrefixCompleter(
 	readline.PcItem("exit"),
-	readline.PcItem("echo"),
+	//readline.PcItem("echo"),
 	readline.PcItemDynamic(searchPath()),
 )
 
