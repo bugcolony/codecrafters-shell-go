@@ -127,7 +127,8 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 			suggestions = append(suggestions, input+string(line))
 		}
 
-		fmt.Fprintln(v.readline.Stdout(), strings.Join(suggestions, "  "))
+		v.readline.Terminal.Write([]byte(strings.Join(suggestions, "  ")))
+		//fmt.Fprintln(v.readline.Stdout(), strings.Join(suggestions, "  "))
 
 		return [][]rune{line[offset:]}, offset
 	}
