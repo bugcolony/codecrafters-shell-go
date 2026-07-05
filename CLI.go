@@ -131,7 +131,9 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 
 		longestCommon := longestCommonPrefix(input, suggestions)
 
-		v.readline.Terminal.Write([]byte(fmt.Sprintln("\n" + strings.Join(suggestions, "  "))))
+		if longestCommon == input {
+			v.readline.Terminal.Write([]byte(fmt.Sprintln("\n" + strings.Join(suggestions, "  "))))
+		}
 
 		v.lastLine = []rune(longestCommon)
 
