@@ -110,14 +110,7 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 		fmt.Fprint(v.readline.Stderr(), "\a")
 	}
 
-	if !slices.Equal(line, v.lastLine) && len(newLine) > 1 {
-		//fmt.Fprint(v.readline.Stderr(), "\a")
-		v.lastLine = line
-
-		//return nil, 0
-	}
-
-	if slices.Equal(line, v.lastLine) && len(newLine) > 1 {
+	if len(newLine) > 1 {
 		var suggestions []string
 		input := string(line)
 
@@ -127,15 +120,23 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 
 		longestCommon := longestCommonPrefix(input, suggestions)
 
-		if longestCommon == input {
-			v.readline.Terminal.Write([]byte(fmt.Sprintln("\n" + strings.Join(suggestions, "  "))))
+		if longestCommon != input {
+			v.readline.Operation.SetBuffer(longestCommon)
+			v.lastLine = []rune(longestCommon)
+
+			return nil, 0
 		}
 
-		v.lastLine = []rune(longestCommon)
+		if !slices.Equal(line, v.lastLine) {
+			fmt.Fprint(v.readline.Stderr(), "\a")
+			v.lastLine = line
 
-		v.readline.Operation.SetBuffer(longestCommon)
+			return nil, 0
+		}
 
-		return nil, 0
+		v.readline.Terminal.Write([]byte(fmt.Sprintln("\n" + strings.Join(suggestions, "  "))))
+
+		return [][]rune{line[offset:]}, offset
 	}
 
 	v.lastLine = line
