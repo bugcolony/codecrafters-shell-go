@@ -34,9 +34,6 @@ var BuiltinCommands = map[string]bool{
 
 var completer = readline.NewPrefixCompleter(
 	readline.PcItem("exit"),
-	readline.PcItem("one"),
-	readline.PcItem("one_two"),
-	readline.PcItem("one_two_three"),
 	readline.PcItemDynamic(searchPath()),
 )
 
@@ -113,7 +110,6 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 		fmt.Fprint(v.readline.Stderr(), "\a")
 	}
 
-	// ignore bell all of a sudden ?!
 	if !slices.Equal(line, v.lastLine) && len(newLine) > 1 {
 		//fmt.Fprint(v.readline.Stderr(), "\a")
 		v.lastLine = line
