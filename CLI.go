@@ -2,6 +2,7 @@ package codecrafters_shell_go
 
 import (
 	"bufio"
+	"cmp"
 	"fmt"
 	"io"
 	"os"
@@ -33,7 +34,6 @@ var BuiltinCommands = map[string]bool{
 
 var completer = readline.NewPrefixCompleter(
 	readline.PcItem("exit"),
-	//readline.PcItem("echo"),
 	readline.PcItemDynamic(searchPath()),
 )
 
@@ -111,15 +111,13 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 	}
 
 	if !slices.Equal(line, v.lastLine) && len(newLine) > 1 {
-		fmt.Fprint(v.readline.Stderr(), "\a")
 		v.lastLine = line
 
 		return nil, 0
 	}
 
 	if slices.Equal(line, v.lastLine) && len(newLine) > 1 {
-		v.lastLine = nil
-
+		fmt.Fprint(v.readline.Stdout(), "same")
 		var suggestions []string
 		input := string(line)
 
@@ -127,15 +125,51 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 			suggestions = append(suggestions, input+string(line))
 		}
 
-		v.readline.Terminal.Write([]byte(fmt.Sprintln("\n" + strings.Join(suggestions, "  "))))
-		//fmt.Fprintln(v.readline.Stdout(), strings.Join(suggestions, "  "))
+		greatestCommon := greatestCommonPrefix(input, suggestions)
 
-		return [][]rune{line[offset:]}, offset
+		v.readline.Terminal.Write([]byte(fmt.Sprintln("\n" + strings.Join(suggestions, "  "))))
+
+		v.lastLine = []rune(greatestCommon)
+
+		v.readline.Operation.SetBuffer(greatestCommon)
+
+		return nil, 0
 	}
 
 	v.lastLine = line
 
 	return newLine, offset
+}
+
+func greatestCommonPrefix(prefix string, suggestions []string) string {
+	result := prefix
+	candidate := slices.MinFunc(suggestions, func(a, b string) int {
+		return cmp.Compare(len(a), len(b))
+	})
+
+	candidate = strings.TrimPrefix(candidate, prefix)
+
+	for _, char := range strings.Split(candidate, "") {
+		if matchAllPrefix(suggestions, result+char) {
+			result += char
+		} else {
+			break
+		}
+	}
+
+	return result
+}
+
+func matchAllPrefix(suggestions []string, prefix string) bool {
+	matchedCases := 0
+
+	for _, suggestion := range suggestions {
+		if strings.HasPrefix(suggestion, prefix) {
+			matchedCases++
+		}
+	}
+
+	return matchedCases == len(suggestions)
 }
 
 type CLI struct {
