@@ -34,6 +34,9 @@ var BuiltinCommands = map[string]bool{
 
 var completer = readline.NewPrefixCompleter(
 	readline.PcItem("exit"),
+	readline.PcItem("one"),
+	readline.PcItem("one_two"),
+	readline.PcItem("one_two_three"),
 	readline.PcItemDynamic(searchPath()),
 )
 
@@ -134,9 +137,15 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 			return nil, 0
 		}
 
-		v.readline.Terminal.Write([]byte(fmt.Sprintln("\n" + strings.Join(suggestions, "  "))))
+		//v.readline.Terminal.Write([]byte(fmt.Sprintln("\n" + strings.Join(suggestions, "  "))))
 
-		return [][]rune{line[offset:]}, offset
+		fmt.Fprintln(v.readline.Stderr(), strings.Join(suggestions, "  "))
+		//fmt.Fprintf(v.readline.Stderr(), "%#v\n%d\n%#v\n", line, offset, line[offset:])
+		//return [][]rune{[]rune{}}, offset
+
+		//v.readline.Operation.SetBuffer(input)
+
+		return nil, 0
 	}
 
 	v.lastLine = line
