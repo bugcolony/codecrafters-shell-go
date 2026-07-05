@@ -34,6 +34,9 @@ var BuiltinCommands = map[string]bool{
 
 var completer = readline.NewPrefixCompleter(
 	readline.PcItem("exit"),
+	readline.PcItem("one"),
+	readline.PcItem("one_two"),
+	readline.PcItem("one_two_three"),
 	readline.PcItemDynamic(searchPath()),
 )
 
@@ -110,14 +113,15 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 		fmt.Fprint(v.readline.Stderr(), "\a")
 	}
 
+	// ignore bell all of a sudden ?!
 	if !slices.Equal(line, v.lastLine) && len(newLine) > 1 {
+		//fmt.Fprint(v.readline.Stderr(), "\a")
 		v.lastLine = line
 
-		return nil, 0
+		//return nil, 0
 	}
 
 	if slices.Equal(line, v.lastLine) && len(newLine) > 1 {
-		fmt.Fprint(v.readline.Stdout(), "same")
 		var suggestions []string
 		input := string(line)
 
@@ -125,13 +129,13 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 			suggestions = append(suggestions, input+string(line))
 		}
 
-		greatestCommon := greatestCommonPrefix(input, suggestions)
+		longestCommon := longestCommonPrefix(input, suggestions)
 
 		v.readline.Terminal.Write([]byte(fmt.Sprintln("\n" + strings.Join(suggestions, "  "))))
 
-		v.lastLine = []rune(greatestCommon)
+		v.lastLine = []rune(longestCommon)
 
-		v.readline.Operation.SetBuffer(greatestCommon)
+		v.readline.Operation.SetBuffer(longestCommon)
 
 		return nil, 0
 	}
@@ -141,7 +145,7 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 	return newLine, offset
 }
 
-func greatestCommonPrefix(prefix string, suggestions []string) string {
+func longestCommonPrefix(prefix string, suggestions []string) string {
 	result := prefix
 	candidate := slices.MinFunc(suggestions, func(a, b string) int {
 		return cmp.Compare(len(a), len(b))
@@ -250,7 +254,6 @@ func (cli *CLI) Run() {
 			continue
 		}
 
-		// Index 1 element expected to be space (' ')
 		commandLine, err := ParseToTokens(inputLine)
 
 		if err != nil {
