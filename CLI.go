@@ -129,13 +129,17 @@ func searchFile() func(string) []string {
 		}
 
 		for _, f := range dir {
-			if strings.HasPrefix(f.Name(), filename) && !f.IsDir() {
+			if strings.HasPrefix(f.Name(), filename) {
 				var name string
 
 				if nested {
 					name = path.Join(filePath, f.Name())
 				} else {
 					name = f.Name()
+				}
+
+				if f.IsDir() {
+					name += "/"
 				}
 
 				result = append(result, name)
@@ -158,9 +162,18 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 		return nil, 0
 	}
 
+	var lineSuggestions [][]rune
 	newLine, offset := v.inner.Do(line, pos)
 
-	//fmt.Fprintf(os.Stdout, "%#v\n%#v\n", line, newLine)
+	for _, s := range newLine {
+		candidate := s
+
+		if strings.HasSuffix(string(s), "/ ") {
+			candidate = []rune(strings.TrimSuffix(string(s), " "))
+		}
+
+		lineSuggestions = append(lineSuggestions, candidate)
+	}
 
 	if len(newLine) == 0 {
 		fmt.Fprint(v.readline.Stderr(), "\a")
@@ -192,11 +205,6 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 
 		v.readline.Terminal.Write([]byte(fmt.Sprintln("\n" + strings.Join(suggestions, "  "))))
 
-		//fmt.Fprintln(v.readline.Stdout(), strings.Join(suggestions, "  "))
-		//fmt.Fprintf(v.readline.Stderr(), "%#v\n%d\n%#v\n", line, offset, line[offset:])
-		//return [][]rune{[]rune{}}, offset
-
-		//v.readline.Terminal.Write([]byte(input))
 		v.readline.Operation.SetBuffer(input)
 
 		return nil, 0
@@ -204,7 +212,7 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 
 	v.lastLine = line
 
-	return newLine, offset
+	return lineSuggestions, offset
 }
 
 func longestCommonPrefix(prefix string, suggestions []string) string {
