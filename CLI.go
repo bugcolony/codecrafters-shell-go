@@ -15,7 +15,9 @@ import (
 )
 
 const (
-	homePathAlias          = "~"
+	HomePathAlias = "~"
+	Prompt        = "$ "
+
 	RedirectOperator       = ">"
 	RedirectAppend         = ">>"
 	RedirectOperatorStdout = "1>"
@@ -34,17 +36,17 @@ var BuiltinCommands = map[string]bool{
 
 var completer = readline.NewPrefixCompleter(
 	readline.PcItem("exit"),
-	readline.PcItem("one"),
-	readline.PcItem("one_two"),
-	readline.PcItem("one_two_three"),
-	readline.PcItemDynamic(searchPath()),
+	readline.PcItemDynamic(searchPath(),
+		readline.PcItemDynamic(searchFile()),
+	),
 )
 
 func searchPath() func(string) []string {
-	return func(command string) []string {
-		if command == "" {
+	return func(line string) []string {
+		if line == "" {
 			return nil
 		}
+		command, _, _ := strings.Cut(line, " ")
 
 		var candidates []string
 		var wg sync.WaitGroup
@@ -95,6 +97,33 @@ func searchPath() func(string) []string {
 	}
 }
 
+func searchFile() func(string) []string {
+	return func(line string) []string {
+		var result []string
+		tokens := strings.Split(line, " ")
+
+		if len(tokens) < 2 {
+			return nil
+		}
+
+		filename := tokens[len(tokens)-1]
+
+		dir, err := os.ReadDir(".")
+
+		if err != nil {
+			return nil
+		}
+
+		for _, f := range dir {
+			if strings.HasPrefix(f.Name(), filename) && !f.IsDir() {
+				result = append(result, f.Name())
+			}
+		}
+
+		return result
+	}
+}
+
 type verboseCompleter struct {
 	inner    readline.AutoCompleter
 	readline *readline.Instance
@@ -108,6 +137,8 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 	}
 
 	newLine, offset := v.inner.Do(line, pos)
+
+	//fmt.Fprintf(os.Stdout, "%#v\n%#v\n", line, newLine)
 
 	if len(newLine) == 0 {
 		fmt.Fprint(v.readline.Stderr(), "\a")
@@ -137,13 +168,14 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 			return nil, 0
 		}
 
-		//v.readline.Terminal.Write([]byte(fmt.Sprintln("\n" + strings.Join(suggestions, "  "))))
+		v.readline.Terminal.Write([]byte(fmt.Sprintln("\n" + strings.Join(suggestions, "  "))))
 
-		fmt.Fprintln(v.readline.Stderr(), strings.Join(suggestions, "  "))
+		//fmt.Fprintln(v.readline.Stdout(), strings.Join(suggestions, "  "))
 		//fmt.Fprintf(v.readline.Stderr(), "%#v\n%d\n%#v\n", line, offset, line[offset:])
 		//return [][]rune{[]rune{}}, offset
 
-		//v.readline.Operation.SetBuffer(input)
+		//v.readline.Terminal.Write([]byte(input))
+		v.readline.Operation.SetBuffer(input)
 
 		return nil, 0
 	}
@@ -236,11 +268,11 @@ func (cli *CLI) Run() {
 	vc := &verboseCompleter{inner: completer, stderr: os.Stderr}
 
 	rl, err := readline.NewEx(&readline.Config{
-		Prompt:          "$ ",
+		Prompt:          Prompt,
 		AutoComplete:    vc,
 		InterruptPrompt: "^C",
 		Stdout:          cli.out,
-		Stderr:          os.Stderr, // pass constructor
+		Stderr:          os.Stderr,
 	})
 
 	if err != nil {
@@ -362,7 +394,7 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 
 		path := commandParts[1]
 
-		if path == homePathAlias {
+		if path == HomePathAlias {
 			path = os.Getenv("HOME")
 		}
 
