@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"slices"
 	"strings"
 	"sync"
@@ -100,6 +101,8 @@ func searchPath() func(string) []string {
 func searchFile() func(string) []string {
 	return func(line string) []string {
 		var result []string
+		nested := false
+		filePath := "./"
 		tokens := strings.Split(line, " ")
 
 		if len(tokens) < 2 {
@@ -108,7 +111,18 @@ func searchFile() func(string) []string {
 
 		filename := tokens[len(tokens)-1]
 
-		dir, err := os.ReadDir(".")
+		if strings.Contains(filename, string(os.PathSeparator)) {
+			nested = true
+			filePath = path.Clean(filePath + path.Dir(filename))
+
+			if strings.HasSuffix(filename, string(os.PathSeparator)) {
+				filename = ""
+			} else {
+				filename = path.Base(filename)
+			}
+		}
+
+		dir, err := os.ReadDir(filePath)
 
 		if err != nil {
 			return nil
@@ -116,7 +130,15 @@ func searchFile() func(string) []string {
 
 		for _, f := range dir {
 			if strings.HasPrefix(f.Name(), filename) && !f.IsDir() {
-				result = append(result, f.Name())
+				var name string
+
+				if nested {
+					name = path.Join(filePath, f.Name())
+				} else {
+					name = f.Name()
+				}
+
+				result = append(result, name)
 			}
 		}
 
