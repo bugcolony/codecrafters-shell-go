@@ -109,6 +109,7 @@ func searchFile() func(string) []string {
 			return nil
 		}
 
+		argLine := tokens[1 : len(tokens)-1]
 		filename := tokens[len(tokens)-1]
 
 		if strings.Contains(filename, string(os.PathSeparator)) {
@@ -142,7 +143,7 @@ func searchFile() func(string) []string {
 					name += "/"
 				}
 
-				result = append(result, name)
+				result = append(result, strings.TrimSpace(fmt.Sprintf("%s %s", strings.Join(argLine, " "), name)))
 			}
 		}
 
