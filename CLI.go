@@ -53,9 +53,9 @@ func searchPath() func(string) []string {
 		var wg sync.WaitGroup
 		var mu sync.Mutex
 
-		path := os.Getenv("PATH")
+		envPath := os.Getenv("PATH")
 
-		dirs := strings.Split(path, string(os.PathListSeparator))
+		dirs := strings.Split(envPath, string(os.PathListSeparator))
 
 		for _, dir := range dirs {
 			fs, err := os.ReadDir(dir)
@@ -182,16 +182,23 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 	if len(newLine) > 1 {
 		var suggestions []string
 		input := string(line)
+		autoCompPrefix := input
 
-		for _, line := range newLine {
-			suggestions = append(suggestions, input+string(line))
+		tokens := strings.SplitAfter(input, " ")
+
+		if len(tokens) > 1 {
+			autoCompPrefix = tokens[len(tokens)-1]
 		}
 
-		longestCommon := longestCommonPrefix(input, suggestions)
+		for _, line := range newLine {
+			suggestions = append(suggestions, autoCompPrefix+string(line))
+		}
 
-		if longestCommon != input {
-			v.readline.Operation.SetBuffer(longestCommon)
-			v.lastLine = []rune(longestCommon)
+		autoFill := longestCommonPrefixAutoFill(autoCompPrefix, suggestions)
+
+		if autoFill != "" {
+			v.readline.Operation.SetBuffer(input + autoFill)
+			v.lastLine = []rune(input + autoFill)
 
 			return nil, 0
 		}
@@ -205,9 +212,9 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 
 		v.readline.Terminal.Write([]byte(fmt.Sprintln("\n" + strings.Join(suggestions, "  "))))
 
-		v.readline.Operation.SetBuffer(input)
+		v.readline.Operation.SetBuffer(string(line))
 
-		return nil, 0
+		return nil, offset
 	}
 
 	v.lastLine = line
@@ -215,8 +222,8 @@ func (v *verboseCompleter) Do(line []rune, pos int) ([][]rune, int) {
 	return lineSuggestions, offset
 }
 
-func longestCommonPrefix(prefix string, suggestions []string) string {
-	result := prefix
+func longestCommonPrefixAutoFill(prefix string, suggestions []string) string {
+	result := ""
 	candidate := slices.MinFunc(suggestions, func(a, b string) int {
 		return cmp.Compare(len(a), len(b))
 	})
@@ -224,7 +231,7 @@ func longestCommonPrefix(prefix string, suggestions []string) string {
 	candidate = strings.TrimPrefix(candidate, prefix)
 
 	for _, char := range strings.Split(candidate, "") {
-		if matchAllPrefix(suggestions, result+char) {
+		if matchAllPrefix(suggestions, prefix+result+char) {
 			result += char
 		} else {
 			break
@@ -269,13 +276,13 @@ func (cli *CLI) printNotFound(cmd string) {
 }
 
 func (cli *CLI) pathLookup(cmd string) (string, bool) {
-	path, err := exec.LookPath(cmd)
+	executable, err := exec.LookPath(cmd)
 
 	if err != nil {
 		return "", false
 	}
 
-	return path, true
+	return executable, true
 }
 
 func (cli *CLI) RunCommand(out io.Writer, errOut io.Writer, cmd string, args []string) {
@@ -422,14 +429,14 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 			return true
 		}
 
-		path := commandParts[1]
+		pathArg := commandParts[1]
 
-		if path == HomePathAlias {
-			path = os.Getenv("HOME")
+		if pathArg == HomePathAlias {
+			pathArg = os.Getenv("HOME")
 		}
 
-		if err := os.Chdir(path); err != nil {
-			fmt.Fprintf(cli.out, "cd: %s: No such file or directory\n", path)
+		if err := os.Chdir(pathArg); err != nil {
+			fmt.Fprintf(cli.out, "cd: %s: No such file or directory\n", pathArg)
 		}
 	case "type":
 		if len(commandParts) < 2 {
@@ -441,8 +448,8 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 		if _, exists := BuiltinCommands[typeCmd]; exists {
 			fmt.Fprintf(variableStdout, "%s is a shell builtin\n", typeCmd)
 		} else {
-			if path, exist := cli.pathLookup(typeCmd); exist {
-				fmt.Fprintf(variableStdout, "%s is %s\n", typeCmd, path)
+			if lookup, exist := cli.pathLookup(typeCmd); exist {
+				fmt.Fprintf(variableStdout, "%s is %s\n", typeCmd, lookup)
 			} else {
 				fmt.Fprintf(variableStdout, "%s: not found\n", typeCmd)
 			}
