@@ -38,7 +38,9 @@ var BuiltinCommands = map[string]bool{
 
 var completer = readline.NewPrefixCompleter(
 	readline.PcItem("exit"),
-	readline.PcItem("complete"),
+	readline.PcItem("complete",
+		readline.PcItem("-p"),
+	),
 	readline.PcItemDynamic(searchPath(),
 		readline.PcItemDynamic(searchFile()),
 	),
@@ -420,7 +422,9 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 
 		fmt.Fprintf(variableStdout, "%s\n", strings.Join(stream, ""))
 	case "complete":
+		pFlag := ParseFlag(commandParts, "-p")
 
+		fmt.Fprintf(variableStdout, "complete: %s: no completion specification\n", pFlag)
 	case "pwd":
 		dir, err := os.Getwd()
 
