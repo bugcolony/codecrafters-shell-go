@@ -40,6 +40,7 @@ var completer = readline.NewPrefixCompleter(
 	readline.PcItem("exit"),
 	readline.PcItem("complete",
 		readline.PcItem("-p"),
+		readline.PcItem("-C"),
 	),
 	readline.PcItemDynamic(searchPath(),
 		readline.PcItemDynamic(searchFile()),
@@ -259,14 +260,16 @@ func matchAllPrefix(suggestions []string, prefix string) bool {
 }
 
 type CLI struct {
-	in  *bufio.Scanner
-	out io.Writer
+	in                *bufio.Scanner
+	out               io.Writer
+	completerRegistry map[string]string
 }
 
 func NewCLI(in io.Reader, out io.Writer) *CLI {
 	return &CLI{
-		in:  bufio.NewScanner(in),
-		out: out,
+		in:                bufio.NewScanner(in),
+		out:               out,
+		completerRegistry: make(map[string]string),
 	}
 }
 
@@ -422,9 +425,20 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 
 		fmt.Fprintf(variableStdout, "%s\n", strings.Join(stream, ""))
 	case "complete":
-		pFlag := ParseFlag(commandParts, "-p")
+		pFlag := ParseFlag(commandParts, "-p", 1)
+		cFlag := ParseFlag(commandParts, "-C", 2)
 
-		fmt.Fprintf(variableStdout, "complete: %s: no completion specification\n", pFlag)
+		if pFlag != nil {
+			if reg, ok := cli.completerRegistry[pFlag[0]]; ok {
+				fmt.Fprintf(variableStdout, "complete -C '%s' %s\n", reg, pFlag[0])
+			} else {
+				fmt.Fprintf(variableStdout, "complete: %s: no completion specification\n", pFlag[0])
+			}
+		}
+
+		if cFlag != nil {
+			cli.completerRegistry[cFlag[1]] = cFlag[0]
+		}
 	case "pwd":
 		dir, err := os.Getwd()
 

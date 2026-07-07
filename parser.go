@@ -148,12 +148,14 @@ func ConsolidateTokens(args []string) []string {
 	return tokens
 }
 
-func ParseFlag(line []string, flag string) string {
+func ParseFlag(line []string, flag string, count int) []string {
 	idx := slices.Index(line, flag)
+	start := idx + 1
+	end := start + count
 
-	if idx == -1 || idx+1 > len(line)-1 {
-		return ""
+	if idx == -1 || end > len(line) {
+		return nil
 	}
 
-	return line[idx+1]
+	return line[start:end]
 }
