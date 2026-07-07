@@ -28,15 +28,17 @@ const (
 )
 
 var BuiltinCommands = map[string]bool{
-	"echo": true,
-	"type": true,
-	"exit": true,
-	"pwd":  true,
-	"cd":   true,
+	"echo":     true,
+	"type":     true,
+	"exit":     true,
+	"pwd":      true,
+	"cd":       true,
+	"complete": true,
 }
 
 var completer = readline.NewPrefixCompleter(
 	readline.PcItem("exit"),
+	readline.PcItem("complete"),
 	readline.PcItemDynamic(searchPath(),
 		readline.PcItemDynamic(searchFile()),
 	),
@@ -417,6 +419,8 @@ func (cli *CLI) runCommandLine(commandLine []string) bool {
 		stream := commandLine[2:]
 
 		fmt.Fprintf(variableStdout, "%s\n", strings.Join(stream, ""))
+	case "complete":
+
 	case "pwd":
 		dir, err := os.Getwd()
 
