@@ -1,1 +1,0 @@
-package codecrafters_shell_go

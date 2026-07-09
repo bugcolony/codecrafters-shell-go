@@ -1,4 +1,4 @@
-package codecrafters_shell_go
+package parser
 
 import (
 	"regexp"
@@ -8,9 +8,13 @@ import (
 
 const (
 	TokenExpression = `(>{1,2}|\d*>{1,2})|("((?:[^"\\]|\\["$\\` + "`" + `])*)")+|('([^']*)')+|([^\s\\'"]+)| |\\.`
-	// TokenExpression = `("((?:[^"\\]|\\["$\\` + "`" + `])*)")+|('([^']*)')+|([^\s\\'"]+)| |\\.`
-	// TokenExpression = `("([^"]*)")+|('([^']*)')+|([^\s\\'"]+)| |\\.`
-	// TokenExpression = `\\.|("([^"]*)")+|('([^'"]*)')+|([^\s\\'"]+)| `
+
+	RedirectOperator       = ">"
+	RedirectAppend         = ">>"
+	RedirectOperatorStdout = "1>"
+	RedirectOperatorStderr = "2>"
+	RedirectAppendStdout   = "1>>"
+	RedirectAppendStderr   = "2>>"
 )
 
 func ParseToTokens(input string) ([]string, error) {
@@ -38,26 +42,19 @@ func ParseToTokens(input string) ([]string, error) {
 		}
 
 		if strings.HasPrefix(arg, "\"") || strings.HasPrefix(arg, "'") {
-			tokens = appendToken(tokenBuilder, tokens)
-
-			tokenBuilder.Reset()
-
 			quote := []rune(arg)[0]
 
 			if string(quote) == "\"" && strings.Contains(arg, "\\") {
-				tokens = append(tokens, escapeDoubleQuotedToken(arg))
+				tokenBuilder.WriteString(escapeDoubleQuotedToken(arg))
 			} else {
-				tokens = append(tokens, strings.ReplaceAll(arg, string(quote), ""))
+				tokenBuilder.WriteString(strings.ReplaceAll(arg, string(quote), ""))
 			}
 
 			continue
 		}
 
-		// the debt is very technical in nature
 		if arg == " " {
 			tokens = appendToken(tokenBuilder, tokens)
-
-			tokens = append(tokens, " ")
 
 			tokenBuilder.Reset()
 			continue
@@ -69,6 +66,70 @@ func ParseToTokens(input string) ([]string, error) {
 	tokens = appendToken(tokenBuilder, tokens)
 
 	return tokens, nil
+}
+
+func Parse(input string) (*CommandLine, error) {
+	tokens, err := ParseToTokens(input)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(tokens) == 0 {
+		return nil, nil
+	}
+
+	cl := &CommandLine{
+		Name: tokens[0],
+	}
+
+	args := tokens[1:]
+
+	findRedirectOp := func(s string) bool {
+		return slices.Contains([]string{RedirectOperator, RedirectOperatorStdout, RedirectAppend, RedirectAppendStdout, RedirectOperatorStderr, RedirectAppendStderr}, s)
+	}
+
+	if slices.ContainsFunc(tokens, findRedirectOp) {
+		redirect := &Redirect{}
+		idx := slices.IndexFunc(tokens, findRedirectOp)
+
+		redirectOp := tokens[idx]
+
+		if idx+1 >= len(tokens) {
+			return nil, nil
+		}
+
+		redirect.Target = tokens[idx+1]
+
+		if idx > 1 {
+			args = tokens[1:idx]
+		} else {
+			args = []string{}
+		}
+
+		if strings.Contains(redirectOp, RedirectAppend) {
+			redirect.IsAppend = true
+		}
+
+		if slices.Contains([]string{
+			RedirectOperator,
+			RedirectOperatorStdout,
+			RedirectAppend,
+			RedirectAppendStdout,
+		}, redirectOp) {
+			redirect.Stream = Stdout
+		}
+
+		if redirectOp == RedirectOperatorStderr || redirectOp == RedirectAppendStderr {
+			redirect.Stream = Stderr
+		}
+
+		cl.Redirect = redirect
+	}
+
+	cl.Args = args
+
+	return cl, nil
 }
 
 func appendToken(tokenBuilder *strings.Builder, tokens []string) []string {
@@ -100,15 +161,6 @@ func escapeDoubleQuotedToken(token string) string {
 	}
 
 	return escaped.String()
-}
-
-func ParseToArguments(input string) ([]string, error) {
-	output, err := ParseToTokens(input)
-
-	if err != nil {
-		return nil, err
-	}
-	return ConsolidateTokens(output), nil
 }
 
 func splitToTokens(input string) ([]string, error) {
@@ -146,16 +198,4 @@ func ConsolidateTokens(args []string) []string {
 	tokens = appendToken(stack, tokens)
 
 	return tokens
-}
-
-func ParseFlag(line []string, flag string, count int) []string {
-	idx := slices.Index(line, flag)
-	start := idx + 1
-	end := start + count
-
-	if idx == -1 || end > len(line) {
-		return nil
-	}
-
-	return line[start:end]
 }
