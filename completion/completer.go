@@ -282,6 +282,10 @@ func (v *VerboseCompleter) completionRegistryCandidates(script string, line stri
 	_ = os.Setenv(EnvCompLineKey, line)
 	_ = os.Setenv(EnvCompPointKey, strconv.Itoa(len(line)))
 
+	if len(tokens) == 1 {
+		argPrev = argCommand
+	}
+
 	if len(tokens) > 2 {
 		argPrev = tokens[len(tokens)-2]
 		argLine = tokens[1 : len(tokens)-1]
