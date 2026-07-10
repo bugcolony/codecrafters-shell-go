@@ -209,34 +209,24 @@ func (v *VerboseCompleter) PathCandidates(line string) []string {
 
 func (v *VerboseCompleter) FileCandidates(line string) []string {
 	var result []string
+	var argLine []string
+	filename := ""
 	nested := false
 	filePath := "./"
-	tokens := strings.Split(line, " ")
+	tokens := strings.Split(strings.TrimSpace(line), " ")
 
 	if len(tokens) == 0 {
 		return nil
 	}
 
 	if f, ok := v.CompletionRegistry.Get(tokens[0]); ok {
-		out := bytes.Buffer{}
-
-		cmd := exec.Command(f)
-
-		cmd.Stdout = &out
-
-		if err := cmd.Run(); err != nil {
-			return nil
-		}
-
-		return strings.Split(strings.TrimSpace(out.String()), " ")
+		return v.completionRegistryCandidates(f, tokens)
 	}
 
-	if len(tokens) < 2 {
-		return nil
+	if len(tokens) > 1 {
+		argLine = tokens[1 : len(tokens)-1]
+		filename = tokens[len(tokens)-1]
 	}
-
-	argLine := tokens[1 : len(tokens)-1]
-	filename := tokens[len(tokens)-1]
 
 	if strings.Contains(filename, string(os.PathSeparator)) {
 		nested = true
@@ -274,4 +264,34 @@ func (v *VerboseCompleter) FileCandidates(line string) []string {
 	}
 
 	return result
+}
+
+func (v *VerboseCompleter) completionRegistryCandidates(script string, tokens []string) []string {
+	argCommand := tokens[0]
+	argCompletion := tokens[len(tokens)-1]
+	argPrev := ""
+	var argLine []string
+
+	if len(tokens) > 2 {
+		argPrev = tokens[len(tokens)-2]
+		argLine = tokens[1 : len(tokens)-1]
+	}
+
+	out := bytes.Buffer{}
+
+	cmd := exec.Command(script, argCommand, argCompletion, argPrev)
+
+	cmd.Stdout = &out
+
+	if err := cmd.Run(); err != nil {
+		return nil
+	}
+
+	var res []string
+
+	for _, candidate := range strings.Split(strings.TrimSuffix(out.String(), "\n"), "\n") {
+		res = append(res, strings.TrimSpace(fmt.Sprintf("%s %s", strings.Join(argLine, " "), candidate)))
+	}
+
+	return res
 }
