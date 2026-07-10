@@ -57,6 +57,9 @@ func (e *Executor) executeExternal(cl *parser.CommandLine, out io.Writer, errOut
 
 	command := exec.Command(cl.Name, cl.Args...)
 
+	command.Stdout = out
+	command.Stderr = errOut
+
 	if cl.Background {
 		err := command.Start()
 		if err != nil {
@@ -77,9 +80,6 @@ func (e *Executor) executeExternal(cl *parser.CommandLine, out io.Writer, errOut
 			}
 		}()
 	} else {
-		command.Stdout = out
-		command.Stderr = errOut
-
 		_ = command.Run()
 	}
 
