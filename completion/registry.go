@@ -18,6 +18,10 @@ func (r *Registry) Get(name string) (string, bool) {
 	return comp, ok
 }
 
+func (r *Registry) Remove(name string) {
+	delete(r.Scripts, name)
+}
+
 func (r *Registry) Names() []string {
 	names := make([]string, 0, len(r.Scripts))
 

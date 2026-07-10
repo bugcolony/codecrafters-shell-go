@@ -9,6 +9,7 @@ import (
 type CompletionReg interface {
 	Set(command string, script string)
 	Get(command string) (string, bool)
+	Remove(command string)
 }
 
 type Complete struct {
@@ -22,6 +23,7 @@ func (c *Complete) Name() string {
 func (c *Complete) Execute(args []string, out io.Writer, errOut io.Writer) bool {
 	pFlag := parseFlag(args, "-p", 1)
 	cFlag := parseFlag(args, "-C", 2)
+	rFlag := parseFlag(args, "-r", 1)
 
 	if pFlag != nil {
 		if reg, ok := c.CompleteRegistry.Get(pFlag[0]); ok {
@@ -33,6 +35,10 @@ func (c *Complete) Execute(args []string, out io.Writer, errOut io.Writer) bool 
 
 	if cFlag != nil {
 		c.CompleteRegistry.Set(cFlag[1], cFlag[0])
+	}
+
+	if rFlag != nil {
+		c.CompleteRegistry.Remove(rFlag[0])
 	}
 
 	return true
