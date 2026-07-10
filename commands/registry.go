@@ -43,6 +43,7 @@ func DefaultRegistry(compReg CompletionReg) *Registry {
 	r.Register(&Complete{
 		CompleteRegistry: compReg,
 	})
+	r.Register(Jobs{})
 
 	return r
 }
