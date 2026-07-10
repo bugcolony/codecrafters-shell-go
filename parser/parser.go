@@ -8,6 +8,7 @@ import (
 
 const (
 	TokenExpression = `(>{1,2}|\d*>{1,2})|("((?:[^"\\]|\\["$\\` + "`" + `])*)")+|('([^']*)')+|([^\s\\'"]+)| |\\.`
+	BackgroundOp    = "&"
 
 	RedirectOperator       = ">"
 	RedirectAppend         = ">>"
@@ -81,6 +82,11 @@ func Parse(input string) (*CommandLine, error) {
 
 	cl := &CommandLine{
 		Name: tokens[0],
+	}
+
+	if tokens[len(tokens)-1] == BackgroundOp {
+		tokens = tokens[:len(tokens)-1]
+		cl.Background = true
 	}
 
 	args := tokens[1:]
@@ -177,25 +183,4 @@ func compactValue(input []string, value string) []string {
 	return slices.CompactFunc(input, func(a, b string) bool {
 		return a == b && a == value
 	})
-}
-
-// ConsolidateTokens Function concat tokens if not separated by space
-// so that the slice can be consumed by command runner.
-func ConsolidateTokens(args []string) []string {
-	var tokens []string
-	stack := &strings.Builder{}
-
-	for _, token := range args {
-		if token == " " {
-			tokens = appendToken(stack, tokens)
-			stack.Reset()
-			continue
-		}
-
-		stack.WriteString(token)
-	}
-
-	tokens = appendToken(stack, tokens)
-
-	return tokens
 }

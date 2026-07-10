@@ -9,9 +9,10 @@ const (
 )
 
 type CommandLine struct {
-	Name     string
-	Args     []string
-	Redirect *Redirect
+	Name       string
+	Args       []string
+	Redirect   *Redirect
+	Background bool
 }
 
 type Redirect struct {

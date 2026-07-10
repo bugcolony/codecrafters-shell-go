@@ -43,24 +43,45 @@ func (e *Executor) Execute(cl *parser.CommandLine, out io.Writer, errOut io.Writ
 		return cmd.Execute(args, stdout, stderr)
 	}
 
-	return e.executeExternal(name, args, stdout, stderr)
+	return e.executeExternal(cl, stdout, stderr)
 }
 
-func (e *Executor) executeExternal(name string, args []string, out io.Writer, errOut io.Writer) bool {
-	_, err := exec.LookPath(name)
+func (e *Executor) executeExternal(cl *parser.CommandLine, out io.Writer, errOut io.Writer) bool {
+	_, err := exec.LookPath(cl.Name)
 
 	if err != nil {
-		fmt.Fprintf(errOut, "%s: command not found\n", name)
+		fmt.Fprintf(errOut, "%s: command not found\n", cl.Name)
 
 		return true
 	}
 
-	command := exec.Command(name, args...)
+	command := exec.Command(cl.Name, cl.Args...)
 
-	command.Stdout = out
-	command.Stderr = errOut
+	if cl.Background {
+		err := command.Start()
+		if err != nil {
+			fmt.Fprintf(errOut, "%s: command could not start\n", cl.Name)
 
-	_ = command.Run()
+			return true
+		}
+
+		pid := command.Process.Pid
+
+		fmt.Fprintf(out, "[1] %d\n", pid)
+
+		go func() {
+			err := command.Wait()
+
+			if err != nil {
+				return
+			}
+		}()
+	} else {
+		command.Stdout = out
+		command.Stderr = errOut
+
+		_ = command.Run()
+	}
 
 	return true
 }
