@@ -9,10 +9,16 @@ import (
 	"os/exec"
 	"path"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/chzyer/readline"
+)
+
+const (
+	EnvCompLineKey  = "COMP_LINE"
+	EnvCompPointKey = "COMP_POINT"
 )
 
 type CommandLister interface {
@@ -220,7 +226,7 @@ func (v *VerboseCompleter) FileCandidates(line string) []string {
 	}
 
 	if f, ok := v.CompletionRegistry.Get(tokens[0]); ok {
-		return v.completionRegistryCandidates(f, tokens)
+		return v.completionRegistryCandidates(f, line)
 	}
 
 	if len(tokens) > 1 {
@@ -266,11 +272,15 @@ func (v *VerboseCompleter) FileCandidates(line string) []string {
 	return result
 }
 
-func (v *VerboseCompleter) completionRegistryCandidates(script string, tokens []string) []string {
+func (v *VerboseCompleter) completionRegistryCandidates(script string, line string) []string {
+	tokens := strings.Split(strings.TrimSpace(line), " ")
 	argCommand := tokens[0]
 	argCompletion := tokens[len(tokens)-1]
 	argPrev := ""
 	var argLine []string
+
+	_ = os.Setenv(EnvCompLineKey, line)
+	_ = os.Setenv(EnvCompPointKey, strconv.Itoa(len(line)))
 
 	if len(tokens) > 2 {
 		argPrev = tokens[len(tokens)-2]
