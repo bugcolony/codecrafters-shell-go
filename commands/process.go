@@ -118,7 +118,17 @@ func (p *ProcessTable) MarkDone(id int) {
 }
 
 func (p *ProcessTable) generateId() int {
-	idx := p.CurrentId + 1
+	idx := 1
+
+	for idx <= p.CurrentId {
+		if _, exists := p.processes[idx]; !exists {
+			return idx
+		}
+		idx++
+	}
+
+	idx = p.CurrentId + 1
+
 	p.CurrentId = idx
 
 	return idx
