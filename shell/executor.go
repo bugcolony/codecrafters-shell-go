@@ -40,6 +40,7 @@ func (e *Executor) Execute(cl *parser.CommandLine, out io.Writer, errOut io.Writ
 	}
 
 	defer cleanup()
+	defer e.Processes.ReportDone(out)
 
 	if cmd, exists := e.Commands.Get(name); exists {
 		return cmd.Execute(args, stdout, stderr)

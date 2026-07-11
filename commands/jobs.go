@@ -30,7 +30,7 @@ func (j *Jobs) Execute(args []string, out io.Writer, errOut io.Writer) bool {
 			indicator = " "
 		}
 
-		fmt.Printf("[%d]%s %-24s %s\n", proc.Id, indicator, proc.State, proc.Command)
+		fmt.Fprintf(out, "[%d]%s %-24s %s\n", proc.Id, indicator, proc.State, proc.Command)
 	}
 
 	return true

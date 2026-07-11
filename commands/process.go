@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+	"io"
 	"maps"
 	"slices"
 	"sync"
@@ -23,10 +25,7 @@ func NewProcessTable() *ProcessTable {
 	return &ProcessTable{processes: make(map[int]*Process)}
 }
 
-func (p *ProcessTable) List() []*Process {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
+func (p *ProcessTable) listLocked() []*Process {
 	var list []*Process
 
 	for _, key := range slices.Sorted(maps.Keys(p.processes)) {
@@ -39,6 +38,18 @@ func (p *ProcessTable) List() []*Process {
 	}
 
 	p.purge()
+
+	return list
+}
+
+func (p *ProcessTable) List() []Process {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	var list []Process
+	for _, proc := range p.listLocked() {
+		list = append(list, *proc)
+	}
 
 	return list
 }
@@ -65,6 +76,34 @@ func (p *ProcessTable) AddNewProcess(pid int, cmd string) *Process {
 	p.processes[proc.Id] = proc
 
 	return proc
+}
+
+func (p *ProcessTable) ReportDone(out io.Writer) {
+	p.mu.Lock()
+	list := p.listLocked()
+	p.mu.Unlock()
+
+	// TODO: dedupe jobs
+	indicator := " "
+
+	for idx, proc := range list {
+		indicator = " "
+
+		switch idx {
+		case len(list) - 1:
+			indicator = "+"
+		case len(list) - 2:
+			indicator = "-"
+		default:
+			indicator = " "
+		}
+
+		if proc.State == "Done" {
+			fmt.Fprintf(out, "[%d]%s %-24s %s\n", proc.Id, indicator, proc.State, proc.Command)
+		}
+	}
+
+	return
 }
 
 func (p *ProcessTable) MarkDone(id int) {
