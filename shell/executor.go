@@ -5,17 +5,19 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/codecrafters-io/shell-starter-go/commands"
 	"github.com/codecrafters-io/shell-starter-go/parser"
 )
 
 type Executor struct {
-	Commands *commands.Registry
+	Commands  *commands.Registry
+	Processes *commands.ProcessList
 }
 
-func NewExecutor(commands *commands.Registry) *Executor {
-	return &Executor{Commands: commands}
+func NewExecutor(commands *commands.Registry, processes *commands.ProcessList) *Executor {
+	return &Executor{Commands: commands, Processes: processes}
 }
 
 func (e *Executor) Execute(cl *parser.CommandLine, out io.Writer, errOut io.Writer) bool {
@@ -69,6 +71,8 @@ func (e *Executor) executeExternal(cl *parser.CommandLine, out io.Writer, errOut
 		}
 
 		pid := command.Process.Pid
+
+		e.Processes.AddNewProcess(pid, strings.TrimSpace(fmt.Sprintf("%s %s", cl.Name, strings.Join(cl.Args, " "))))
 
 		fmt.Fprintf(out, "[1] %d\n", pid)
 

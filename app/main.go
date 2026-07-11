@@ -19,10 +19,11 @@ func main() {
 	errOut := os.Stderr
 
 	completionReg := completion.NewRegistry()
+	processReg := commands.NewProcessList()
 
-	registry := commands.DefaultRegistry(completionReg)
+	registry := commands.DefaultRegistry(completionReg, processReg)
 	completer := completion.NewVerboseCompleter(errOut, registry, completionReg)
-	executor := shell.NewExecutor(registry)
+	executor := shell.NewExecutor(registry, processReg)
 
 	cli := codecraftersshellgo.NewCLI(in, out, errOut, executor, completer)
 

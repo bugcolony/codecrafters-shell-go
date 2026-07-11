@@ -30,7 +30,7 @@ func (r *Registry) Names() []string {
 	return names
 }
 
-func DefaultRegistry(compReg CompletionReg) *Registry {
+func DefaultRegistry(compReg CompletionReg, processReg *ProcessList) *Registry {
 	r := NewRegistry()
 
 	r.Register(Exit{})
@@ -43,7 +43,9 @@ func DefaultRegistry(compReg CompletionReg) *Registry {
 	r.Register(&Complete{
 		CompleteRegistry: compReg,
 	})
-	r.Register(Jobs{})
+	r.Register(&Jobs{
+		Process: processReg,
+	})
 
 	return r
 }
