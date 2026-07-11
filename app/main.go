@@ -19,7 +19,7 @@ func main() {
 	errOut := os.Stderr
 
 	completionReg := completion.NewRegistry()
-	processReg := commands.NewProcessList()
+	processReg := commands.NewProcessTable()
 
 	registry := commands.DefaultRegistry(completionReg, processReg)
 	completer := completion.NewVerboseCompleter(errOut, registry, completionReg)

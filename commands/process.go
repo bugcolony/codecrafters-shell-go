@@ -1,5 +1,11 @@
 package commands
 
+import (
+	"maps"
+	"slices"
+	"sync"
+)
+
 type Process struct {
 	Id      int
 	Pid     int
@@ -7,22 +13,78 @@ type Process struct {
 	State   string
 }
 
-type ProcessList struct {
-	processes map[int]*Process
+type ProcessTable struct {
+	processes       map[int]*Process
+	mu              sync.Mutex
+	CurrentProcess  int
+	PreviousProcess int
 }
 
-func NewProcessList() *ProcessList {
-	return &ProcessList{processes: make(map[int]*Process)}
+func NewProcessTable() *ProcessTable {
+	return &ProcessTable{processes: make(map[int]*Process)}
 }
 
-func (p ProcessList) List() map[int]*Process {
-	return p.processes
+func (p *ProcessTable) List() []*Process {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	var list []*Process
+
+	for _, key := range slices.Sorted(maps.Keys(p.processes)) {
+
+		p, found := p.processes[key]
+
+		if found {
+			list = append(list, p)
+		}
+	}
+
+	p.purge()
+
+	return list
 }
 
-func (p ProcessList) AddNewProcess(pid int, cmd string) *Process {
-	proc := &Process{Id: len(p.processes) + 1, Pid: pid, Command: cmd, State: "Running"}
+func (p *ProcessTable) purge() {
+	for _, proc := range p.processes {
+		if proc.State == "Done" {
+			delete(p.processes, proc.Id)
+		}
+	}
+}
 
-	p.processes[pid] = proc
+func (p *ProcessTable) AddNewProcess(pid int, cmd string) *Process {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	proc := &Process{
+		Id:      p.generateId(),
+		Pid:     pid,
+		Command: cmd,
+		State:   "Running",
+	}
+
+	p.processes[proc.Id] = proc
 
 	return proc
+}
+
+func (p *ProcessTable) MarkDone(id int) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	f, ok := p.processes[id]
+
+	if ok {
+		f.State = "Done"
+	}
+}
+
+func (p *ProcessTable) generateId() int {
+	idx := p.CurrentProcess + 1
+
+	p.PreviousProcess = p.CurrentProcess
+
+	p.CurrentProcess = idx
+
+	return idx
 }

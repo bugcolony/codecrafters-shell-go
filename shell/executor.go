@@ -13,10 +13,10 @@ import (
 
 type Executor struct {
 	Commands  *commands.Registry
-	Processes *commands.ProcessList
+	Processes *commands.ProcessTable
 }
 
-func NewExecutor(commands *commands.Registry, processes *commands.ProcessList) *Executor {
+func NewExecutor(commands *commands.Registry, processes *commands.ProcessTable) *Executor {
 	return &Executor{Commands: commands, Processes: processes}
 }
 
@@ -82,6 +82,8 @@ func (e *Executor) executeExternal(cl *parser.CommandLine, out io.Writer, errOut
 			if err != nil {
 				return
 			}
+
+			e.Processes.MarkDone(proc.Id)
 		}()
 	} else {
 		_ = command.Run()

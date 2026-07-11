@@ -30,7 +30,7 @@ func (r *Registry) Names() []string {
 	return names
 }
 
-func DefaultRegistry(compReg CompletionReg, processReg *ProcessList) *Registry {
+func DefaultRegistry(compReg CompletionReg, processReg *ProcessTable) *Registry {
 	r := NewRegistry()
 
 	r.Register(Exit{})

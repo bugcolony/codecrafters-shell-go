@@ -6,7 +6,7 @@ import (
 )
 
 type Jobs struct {
-	Process *ProcessList
+	Process *ProcessTable
 }
 
 func (j *Jobs) Name() string {
@@ -14,15 +14,15 @@ func (j *Jobs) Name() string {
 }
 
 func (j *Jobs) Execute(args []string, out io.Writer, errOut io.Writer) bool {
-	indicator := ""
-
+	indicator := " "
+	
 	for _, proc := range j.Process.List() {
 		indicator = " "
 
 		switch proc.Id {
-		case len(j.Process.List()):
+		case j.Process.CurrentProcess:
 			indicator = "+"
-		case len(j.Process.List()) - 1:
+		case j.Process.PreviousProcess:
 			indicator = "-"
 		default:
 			indicator = " "
