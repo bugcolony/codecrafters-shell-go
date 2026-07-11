@@ -14,10 +14,9 @@ type Process struct {
 }
 
 type ProcessTable struct {
-	processes       map[int]*Process
-	mu              sync.Mutex
-	CurrentProcess  int
-	PreviousProcess int
+	processes map[int]*Process
+	mu        sync.Mutex
+	CurrentId int
 }
 
 func NewProcessTable() *ProcessTable {
@@ -80,11 +79,8 @@ func (p *ProcessTable) MarkDone(id int) {
 }
 
 func (p *ProcessTable) generateId() int {
-	idx := p.CurrentProcess + 1
-
-	p.PreviousProcess = p.CurrentProcess
-
-	p.CurrentProcess = idx
+	idx := p.CurrentId + 1
+	p.CurrentId = idx
 
 	return idx
 }

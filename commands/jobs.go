@@ -15,14 +15,16 @@ func (j *Jobs) Name() string {
 
 func (j *Jobs) Execute(args []string, out io.Writer, errOut io.Writer) bool {
 	indicator := " "
-	
-	for _, proc := range j.Process.List() {
+
+	list := j.Process.List()
+
+	for idx, proc := range list {
 		indicator = " "
 
-		switch proc.Id {
-		case j.Process.CurrentProcess:
+		switch idx {
+		case len(list) - 1:
 			indicator = "+"
-		case j.Process.PreviousProcess:
+		case len(list) - 2:
 			indicator = "-"
 		default:
 			indicator = " "
