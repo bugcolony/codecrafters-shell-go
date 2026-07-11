@@ -14,17 +14,21 @@ func (j *Jobs) Name() string {
 }
 
 func (j *Jobs) Execute(args []string, out io.Writer, errOut io.Writer) bool {
-	idx := 0
-	last := ""
+	indicator := ""
 
 	for _, proc := range j.Process.List() {
-		idx++
+		indicator = " "
 
-		if idx == len(j.Process.List()) {
-			last = "+"
+		switch proc.Id {
+		case len(j.Process.List()):
+			indicator = "+"
+		case len(j.Process.List()) - 1:
+			indicator = "-"
+		default:
+			indicator = " "
 		}
 
-		fmt.Printf("[%d]%s %-24s %s\n", idx, last, proc.State, proc.Command)
+		fmt.Printf("[%d]%s %-24s %s\n", proc.Id, indicator, proc.State, proc.Command)
 	}
 
 	return true

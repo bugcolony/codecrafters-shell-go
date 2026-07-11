@@ -72,9 +72,9 @@ func (e *Executor) executeExternal(cl *parser.CommandLine, out io.Writer, errOut
 
 		pid := command.Process.Pid
 
-		e.Processes.AddNewProcess(pid, strings.TrimSpace(fmt.Sprintf("%s %s", cl.Name, strings.Join(cl.Args, " "))))
+		proc := e.Processes.AddNewProcess(pid, strings.TrimSpace(fmt.Sprintf("%s %s", cl.Name, strings.Join(cl.Args, " "))))
 
-		fmt.Fprintf(out, "[1] %d\n", pid)
+		fmt.Fprintf(out, "[%d] %d\n", proc.Id, pid)
 
 		go func() {
 			err := command.Wait()
