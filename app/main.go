@@ -19,7 +19,7 @@ func main() {
 	in := os.Stdin
 	errOut := os.Stderr
 
-	history, cleanup, err := shell.NewHistory("./history.txt")
+	history, cleanup, err := shell.NewHistory("/tmp/shell_history.txt")
 
 	if err != nil {
 		log.Fatal(err)
