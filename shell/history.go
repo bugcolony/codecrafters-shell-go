@@ -39,8 +39,10 @@ func (h *History) initMem() {
 	}
 }
 
-func (h *History) Push(line string) {
-	h.mem = append(h.mem, line)
+func (h *History) Push(lines ...string) {
+	for _, line := range lines {
+		h.mem = append(h.mem, line)
+	}
 
 	//h.file.WriteString(line + "\n")
 }

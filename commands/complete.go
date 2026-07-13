@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 	"io"
-	"slices"
 )
 
 type CompletionReg interface {
@@ -21,9 +20,9 @@ func (c *Complete) Name() string {
 }
 
 func (c *Complete) Execute(args []string, out io.Writer, errOut io.Writer) bool {
-	pFlag := parseFlag(args, "-p", 1)
-	cFlag := parseFlag(args, "-C", 2)
-	rFlag := parseFlag(args, "-r", 1)
+	pFlag := ParseFlag(args, "-p", 1)
+	cFlag := ParseFlag(args, "-C", 2)
+	rFlag := ParseFlag(args, "-r", 1)
 
 	if pFlag != nil {
 		if reg, ok := c.CompleteRegistry.Get(pFlag[0]); ok {
@@ -42,16 +41,4 @@ func (c *Complete) Execute(args []string, out io.Writer, errOut io.Writer) bool 
 	}
 
 	return true
-}
-
-func parseFlag(args []string, flag string, count int) []string {
-	idx := slices.Index(args, flag)
-	start := idx + 1
-	end := start + count
-
-	if idx == -1 || end > len(args) {
-		return nil
-	}
-
-	return args[start:end]
 }
