@@ -11,6 +11,7 @@ import (
 type HistorySource interface {
 	List() []string
 	Push(lines ...string)
+	WriteToFile(filename string) error
 }
 
 type History struct {
@@ -23,7 +24,6 @@ func (h *History) Name() string {
 
 func (h *History) Execute(args []string, out io.Writer, errOut io.Writer) bool {
 	var offset int
-	var fromFileList []string
 	list := h.source.List()
 
 	if len(args) == 1 {
@@ -36,29 +36,45 @@ func (h *History) Execute(args []string, out io.Writer, errOut io.Writer) bool {
 
 	if len(args) == 2 {
 		rFlag := ParseFlag(args, "-r", 1)
+		wFlag := ParseFlag(args, "-w", 1)
 
 		if rFlag != nil {
-			f, err := os.Open(rFlag[0])
+			return h.handleFileRead(rFlag[0])
+		}
 
-			if err != nil {
-				return true
-			}
-
-			scanner := bufio.NewScanner(f)
-
-			for scanner.Scan() {
-				fromFileList = append(fromFileList, scanner.Text())
-			}
-
-			h.source.Push(fromFileList...)
-
-			return true
+		if wFlag != nil {
+			return h.handleFileWrite(wFlag[0])
 		}
 	}
 
 	for i := offset; i < len(list); i++ {
 		fmt.Fprintf(out, "%5d  %s\n", i+1, list[i])
 	}
+
+	return true
+}
+
+func (h *History) handleFileRead(name string) bool {
+	var fromFileList []string
+	f, err := os.Open(name)
+
+	if err != nil {
+		return true
+	}
+
+	scanner := bufio.NewScanner(f)
+
+	for scanner.Scan() {
+		fromFileList = append(fromFileList, scanner.Text())
+	}
+
+	h.source.Push(fromFileList...)
+
+	return true
+}
+
+func (h *History) handleFileWrite(name string) bool {
+	_ = h.source.WriteToFile(name)
 
 	return true
 }

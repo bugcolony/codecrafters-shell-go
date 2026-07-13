@@ -50,3 +50,19 @@ func (h *History) Push(lines ...string) {
 func (h *History) List() []string {
 	return h.mem
 }
+
+func (h *History) WriteToFile(filename string) error {
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0666)
+
+	if err != nil {
+		return err
+	}
+
+	for _, line := range h.mem {
+		file.WriteString(line + "\n")
+	}
+
+	file.Close()
+
+	return nil
+}
