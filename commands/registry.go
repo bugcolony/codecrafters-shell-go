@@ -39,6 +39,7 @@ func DefaultRegistry(compReg CompletionReg, processReg *ProcessTable, history Hi
 	})
 	r.Register(Pwd{})
 	r.Register(Echo{})
+	r.Register(Declare{})
 	r.Register(Cd{})
 	r.Register(&Type{
 		Commands: r,
