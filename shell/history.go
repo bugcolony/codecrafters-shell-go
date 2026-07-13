@@ -6,29 +6,38 @@ import (
 	"os"
 )
 
+const EnvHistoryFile = "HISTFILE"
+
 type History struct {
 	file      *os.File
 	mem       []string
 	appendIdx int
 }
 
-func NewHistory(filename string) (*History, func(), error) {
+func NewHistory() (*History, func(), error) {
 	h := &History{}
+	filename := os.Getenv(EnvHistoryFile)
 
-	//file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0666)
-
-	//if err != nil {
-	//	return nil, nil, err
-	//}
-
-	cleanup := func() {
-		//file.Close()
-		//os.Remove(file.Name())
+	if filename == "" {
+		return h, func() {}, nil
 	}
 
-	//h.file = file
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0666)
 
-	//h.initMem()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	cleanup := func() {
+		file.Truncate(0)
+		file.Close()
+
+		_ = h.writeListToFile(filename, h.mem, io.SeekStart)
+	}
+
+	h.file = file
+
+	h.initMem()
 
 	return h, cleanup, nil
 }
@@ -45,8 +54,6 @@ func (h *History) Push(lines ...string) {
 	for _, line := range lines {
 		h.mem = append(h.mem, line)
 	}
-
-	//h.file.WriteString(line + "\n")
 }
 
 func (h *History) List() []string {
