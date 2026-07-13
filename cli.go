@@ -20,15 +20,17 @@ type CLI struct {
 	errOut    io.Writer
 	executor  *shell.Executor
 	completer *completion.VerboseCompleter
+	history   *shell.History
 }
 
-func NewCLI(in io.Reader, out io.Writer, errOut io.Writer, executor *shell.Executor, completer *completion.VerboseCompleter) *CLI {
+func NewCLI(in io.Reader, out io.Writer, errOut io.Writer, executor *shell.Executor, completer *completion.VerboseCompleter, history *shell.History) *CLI {
 	return &CLI{
 		in:        bufio.NewScanner(in),
 		out:       out,
 		errOut:    errOut,
 		executor:  executor,
 		completer: completer,
+		history:   history,
 	}
 }
 
@@ -59,6 +61,8 @@ func (cli *CLI) Run() {
 		if len(inputLine) == 0 {
 			continue
 		}
+
+		cli.history.Push(inputLine)
 
 		commandLine, err := parser.Parse(inputLine)
 

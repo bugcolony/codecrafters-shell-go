@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	codecraftersshellgo "github.com/codecrafters-io/shell-starter-go"
@@ -18,14 +19,22 @@ func main() {
 	in := os.Stdin
 	errOut := os.Stderr
 
+	history, cleanup, err := shell.NewHistory("./history.txt")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer cleanup()
+
 	completionReg := completion.NewRegistry()
 	processReg := commands.NewProcessTable()
 
-	registry := commands.DefaultRegistry(completionReg, processReg)
+	registry := commands.DefaultRegistry(completionReg, processReg, history)
 	completer := completion.NewVerboseCompleter(errOut, registry, completionReg)
 	executor := shell.NewExecutor(registry, processReg)
 
-	cli := codecraftersshellgo.NewCLI(in, out, errOut, executor, completer)
+	cli := codecraftersshellgo.NewCLI(in, out, errOut, executor, completer, history)
 
 	cli.Run()
 }
