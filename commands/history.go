@@ -12,6 +12,7 @@ type HistorySource interface {
 	List() []string
 	Push(lines ...string)
 	WriteToFile(filename string) error
+	AppendToFile(filename string) error
 }
 
 type History struct {
@@ -37,6 +38,7 @@ func (h *History) Execute(args []string, out io.Writer, errOut io.Writer) bool {
 	if len(args) == 2 {
 		rFlag := ParseFlag(args, "-r", 1)
 		wFlag := ParseFlag(args, "-w", 1)
+		aFlag := ParseFlag(args, "-a", 1)
 
 		if rFlag != nil {
 			return h.handleFileRead(rFlag[0])
@@ -44,6 +46,10 @@ func (h *History) Execute(args []string, out io.Writer, errOut io.Writer) bool {
 
 		if wFlag != nil {
 			return h.handleFileWrite(wFlag[0])
+		}
+
+		if aFlag != nil {
+			return h.handleFileAppend(aFlag[0])
 		}
 	}
 
@@ -75,6 +81,12 @@ func (h *History) handleFileRead(name string) bool {
 
 func (h *History) handleFileWrite(name string) bool {
 	_ = h.source.WriteToFile(name)
+
+	return true
+}
+
+func (h *History) handleFileAppend(name string) bool {
+	_ = h.source.AppendToFile(name)
 
 	return true
 }

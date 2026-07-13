@@ -2,12 +2,14 @@ package shell
 
 import (
 	"bufio"
+	"io"
 	"os"
 )
 
 type History struct {
-	file *os.File
-	mem  []string
+	file      *os.File
+	mem       []string
+	appendIdx int
 }
 
 func NewHistory(filename string) (*History, func(), error) {
@@ -52,17 +54,35 @@ func (h *History) List() []string {
 }
 
 func (h *History) WriteToFile(filename string) error {
+	return h.writeListToFile(filename, h.mem, io.SeekStart)
+}
+
+func (h *History) writeListToFile(filename string, list []string, whence int) error {
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0666)
 
 	if err != nil {
 		return err
 	}
 
-	for _, line := range h.mem {
+	file.Seek(0, whence)
+
+	for _, line := range list {
 		file.WriteString(line + "\n")
 	}
 
 	file.Close()
 
 	return nil
+}
+
+func (h *History) AppendToFile(filename string) error {
+	if h.appendIdx >= len(h.mem) {
+		return nil
+	}
+
+	list := h.mem[h.appendIdx:]
+
+	h.appendIdx = len(h.mem)
+
+	return h.writeListToFile(filename, list, io.SeekEnd)
 }
