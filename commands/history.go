@@ -31,7 +31,7 @@ func (h *History) Execute(args []string, out io.Writer, errOut io.Writer) bool {
 	}
 
 	for i := offset; i < len(list); i++ {
-		fmt.Fprintf(out, "%5d %s\n", i+1, list[i])
+		fmt.Fprintf(out, "%5d  %s\n", i+1, list[i])
 	}
 
 	return true
