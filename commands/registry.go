@@ -34,6 +34,7 @@ func DefaultRegistry(compReg CompletionReg, processReg *ProcessTable) *Registry 
 	r := NewRegistry()
 
 	r.Register(Exit{})
+	r.Register(History{})
 	r.Register(Pwd{})
 	r.Register(Echo{})
 	r.Register(Cd{})
