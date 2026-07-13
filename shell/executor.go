@@ -57,33 +57,24 @@ func (e *Executor) runCommand(cl *parser.CommandLine, in io.Reader, out io.Write
 }
 
 func (e *Executor) runPipeLine(cl *parser.CommandLine, out io.Writer, errOut io.Writer) bool {
-	var cmd []*exec.Cmd
+	var lastReader io.Reader
 
-	for _, pipeCl := range cl.Pipeline {
-		cmd = append(cmd, exec.Command(pipeCl.Name, pipeCl.Args...))
-	}
-
-	for i := 0; i < len(cmd)-1; i++ {
-		pipe, err := cmd[i].StdoutPipe()
-
-		if err != nil {
-			return true
+	for idx, cmd := range cl.Pipeline {
+		if idx == len(cl.Pipeline)-1 {
+			e.runCommand(cmd, lastReader, out, errOut)
+			continue
 		}
-		cmd[i+1].Stdin = pipe
-	}
 
-	cmd[len(cmd)-1].Stdout = out
+		pRead, pWrite := io.Pipe()
+		in := lastReader
 
-	for _, c := range cmd {
-		if err := c.Start(); err != nil {
-			return true
-		}
-	}
+		go func() {
+			defer pWrite.Close()
 
-	for _, c := range cmd {
-		if err := c.Wait(); err != nil {
-			return true
-		}
+			e.runCommand(cmd, in, pWrite, errOut)
+		}()
+
+		lastReader = pRead
 	}
 
 	return true
@@ -99,6 +90,10 @@ func (e *Executor) executeExternal(cl *parser.CommandLine, in io.Reader, out io.
 	}
 
 	command := exec.Command(cl.Name, cl.Args...)
+
+	if in != nil {
+		command.Stdin = in
+	}
 
 	command.Stdout = out
 	command.Stderr = errOut
