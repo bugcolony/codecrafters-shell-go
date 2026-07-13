@@ -21,6 +21,7 @@ func NewHistory(filename string) (*History, func(), error) {
 
 	cleanup := func() {
 		file.Close()
+		os.Remove(file.Name())
 	}
 
 	h.file = file
