@@ -49,24 +49,6 @@ func (cli *CLI) Run() {
 
 	defer rl.Close()
 
-	//vc := &verboseCompleter{inner: completer, stderr: os.Stderr}
-	//
-	//rl, err := readline.NewEx(&readline.Config{
-	//	Prompt:          Prompt,
-	//	AutoComplete:    vc,
-	//	InterruptPrompt: "^C",
-	//	Stdout:          cli.out,
-	//	Stderr:          os.Stderr,
-	//})
-	//
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//vc.readline = rl
-	//
-	//defer rl.Close()
-
 	for {
 		inputLine, err := rl.Readline()
 

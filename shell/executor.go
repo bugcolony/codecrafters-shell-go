@@ -21,8 +21,16 @@ func NewExecutor(commands *commands.Registry, processes *commands.ProcessTable) 
 }
 
 func (e *Executor) Execute(cl *parser.CommandLine, out io.Writer, errOut io.Writer) bool {
-	name := cl.Name
-	args := cl.Args
+	defer e.Processes.ReportDone(out)
+
+	if cl.Pipeline != nil && len(cl.Pipeline) > 0 {
+		return e.runPipeLine(cl, out, errOut)
+	}
+
+	return e.runCommand(cl, nil, out, errOut)
+}
+
+func (e *Executor) runCommand(cl *parser.CommandLine, in io.Reader, out io.Writer, errOut io.Writer) bool {
 	stdout := out
 	stderr := errOut
 	cleanup := func() {}
@@ -40,16 +48,48 @@ func (e *Executor) Execute(cl *parser.CommandLine, out io.Writer, errOut io.Writ
 	}
 
 	defer cleanup()
-	defer e.Processes.ReportDone(out)
 
-	if cmd, exists := e.Commands.Get(name); exists {
-		return cmd.Execute(args, stdout, stderr)
+	if cmd, exists := e.Commands.Get(cl.Name); exists {
+		return cmd.Execute(cl.Args, stdout, stderr)
 	}
 
-	return e.executeExternal(cl, stdout, stderr)
+	return e.executeExternal(cl, in, stdout, stderr)
 }
 
-func (e *Executor) executeExternal(cl *parser.CommandLine, out io.Writer, errOut io.Writer) bool {
+func (e *Executor) runPipeLine(cl *parser.CommandLine, out io.Writer, errOut io.Writer) bool {
+	var cmd []*exec.Cmd
+
+	for _, pipeCl := range cl.Pipeline {
+		cmd = append(cmd, exec.Command(pipeCl.Name, pipeCl.Args...))
+	}
+
+	for i := 0; i < len(cmd)-1; i++ {
+		pipe, err := cmd[i].StdoutPipe()
+
+		if err != nil {
+			return true
+		}
+		cmd[i+1].Stdin = pipe
+	}
+
+	cmd[len(cmd)-1].Stdout = out
+
+	for _, c := range cmd {
+		if err := c.Start(); err != nil {
+			return true
+		}
+	}
+
+	for _, c := range cmd {
+		if err := c.Wait(); err != nil {
+			return true
+		}
+	}
+
+	return true
+}
+
+func (e *Executor) executeExternal(cl *parser.CommandLine, in io.Reader, out io.Writer, errOut io.Writer) bool {
 	_, err := exec.LookPath(cl.Name)
 
 	if err != nil {

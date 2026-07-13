@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"regexp"
 	"slices"
 	"strings"
@@ -9,6 +10,7 @@ import (
 const (
 	TokenExpression = `(>{1,2}|\d*>{1,2})|("((?:[^"\\]|\\["$\\` + "`" + `])*)")+|('([^']*)')+|([^\s\\'"]+)| |\\.`
 	BackgroundOp    = "&"
+	PipeOp          = "|"
 
 	RedirectOperator       = ">"
 	RedirectAppend         = ">>"
@@ -16,6 +18,8 @@ const (
 	RedirectOperatorStderr = "2>"
 	RedirectAppendStdout   = "1>>"
 	RedirectAppendStderr   = "2>>"
+
+	ErrInvalidRedirect = "invalid redirect"
 )
 
 func ParseToTokens(input string) ([]string, error) {
@@ -80,13 +84,69 @@ func Parse(input string) (*CommandLine, error) {
 		return nil, nil
 	}
 
-	cl := &CommandLine{
-		Name: tokens[0],
-	}
+	background := false
 
 	if tokens[len(tokens)-1] == BackgroundOp {
 		tokens = tokens[:len(tokens)-1]
-		cl.Background = true
+		background = true
+	}
+
+	if slices.Contains(tokens, PipeOp) {
+		var pipeTokens [][]string
+		var pipeLine []*CommandLine
+
+		cl := &CommandLine{
+			Background: background,
+		}
+
+		line := tokens
+
+		for slices.Contains(line, PipeOp) {
+			idx := slices.Index(line, PipeOp)
+
+			if idx == -1 {
+				break
+			}
+
+			pipeTokens = append(pipeTokens, line[0:idx])
+			line = line[idx+1:]
+		}
+
+		if len(line) != 0 {
+			pipeTokens = append(pipeTokens, line)
+		}
+
+		for _, pipeTok := range pipeTokens {
+			p, err := newCommandLine(pipeTok)
+
+			if err != nil {
+				return nil, err
+			}
+
+			pipeLine = append(pipeLine, p)
+		}
+
+		if len(pipeLine) != 0 {
+			cl.Pipeline = pipeLine
+		}
+
+		return cl, nil
+	}
+
+	cl, err := newCommandLine(tokens)
+
+	if err != nil {
+		return nil, err
+	}
+
+	cl.Background = background
+
+	return cl, nil
+}
+
+func newCommandLine(tokens []string) (*CommandLine, error) {
+	cl := &CommandLine{
+		Name: tokens[0],
 	}
 
 	args := tokens[1:]
@@ -102,7 +162,7 @@ func Parse(input string) (*CommandLine, error) {
 		redirectOp := tokens[idx]
 
 		if idx+1 >= len(tokens) {
-			return nil, nil
+			return nil, errors.New(ErrInvalidRedirect)
 		}
 
 		redirect.Target = tokens[idx+1]

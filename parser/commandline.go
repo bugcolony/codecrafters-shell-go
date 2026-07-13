@@ -13,6 +13,7 @@ type CommandLine struct {
 	Args       []string
 	Redirect   *Redirect
 	Background bool
+	Pipeline   []*CommandLine
 }
 
 type Redirect struct {
