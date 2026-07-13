@@ -18,8 +18,8 @@ func (h *History) Name() string {
 }
 
 func (h *History) Execute(args []string, out io.Writer, errOut io.Writer) bool {
-	for _, line := range h.source.List() {
-		fmt.Fprintln(out, string(line))
+	for i, line := range h.source.List() {
+		fmt.Fprintf(out, "%d %s\n", i+1, string(line))
 	}
 
 	return true
