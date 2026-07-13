@@ -13,20 +13,20 @@ type History struct {
 func NewHistory(filename string) (*History, func(), error) {
 	h := &History{}
 
-	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0666)
+	//file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0666)
 
-	if err != nil {
-		return nil, nil, err
-	}
+	//if err != nil {
+	//	return nil, nil, err
+	//}
 
 	cleanup := func() {
-		file.Close()
-		os.Remove(file.Name())
+		//file.Close()
+		//os.Remove(file.Name())
 	}
 
-	h.file = file
+	//h.file = file
 
-	h.initMem()
+	//h.initMem()
 
 	return h, cleanup, nil
 }
@@ -42,7 +42,7 @@ func (h *History) initMem() {
 func (h *History) Push(line string) {
 	h.mem = append(h.mem, line)
 
-	h.file.WriteString(line + "\n")
+	//h.file.WriteString(line + "\n")
 }
 
 func (h *History) List() []string {
