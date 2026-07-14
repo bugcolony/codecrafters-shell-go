@@ -55,7 +55,7 @@ func (d *Declare) Execute(args []string, out io.Writer, errOut io.Writer) bool {
 				return true
 			}
 		} else {
-			fmt.Fprintf(out, "%s: `%s': not a valid indentifier\n", d.Name(), pair)
+			fmt.Fprintf(out, "%s: `%s': not a valid identifier\n", d.Name(), pair)
 		}
 	}
 
