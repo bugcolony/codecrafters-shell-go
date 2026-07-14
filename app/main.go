@@ -29,8 +29,9 @@ func main() {
 
 	completionReg := completion.NewRegistry()
 	processReg := commands.NewProcessTable()
+	variableReg := shell.NewVariableRegistry()
 
-	registry := commands.DefaultRegistry(completionReg, processReg, history)
+	registry := commands.DefaultRegistry(completionReg, processReg, history, variableReg)
 	completer := completion.NewVerboseCompleter(errOut, registry, completionReg)
 	executor := shell.NewExecutor(registry, processReg)
 

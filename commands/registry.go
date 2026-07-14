@@ -30,7 +30,7 @@ func (r *Registry) Names() []string {
 	return names
 }
 
-func DefaultRegistry(compReg CompletionReg, processReg *ProcessTable, history HistorySource) *Registry {
+func DefaultRegistry(compReg CompletionReg, processReg *ProcessTable, history HistorySource, variables VariableRegistry) *Registry {
 	r := NewRegistry()
 
 	r.Register(Exit{})
@@ -39,7 +39,9 @@ func DefaultRegistry(compReg CompletionReg, processReg *ProcessTable, history Hi
 	})
 	r.Register(Pwd{})
 	r.Register(Echo{})
-	r.Register(Declare{})
+	r.Register(&Declare{
+		variables: variables,
+	})
 	r.Register(Cd{})
 	r.Register(&Type{
 		Commands: r,
