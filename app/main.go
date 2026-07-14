@@ -33,7 +33,7 @@ func main() {
 
 	registry := commands.DefaultRegistry(completionReg, processReg, history, variableReg)
 	completer := completion.NewVerboseCompleter(errOut, registry, completionReg)
-	executor := shell.NewExecutor(registry, processReg)
+	executor := shell.NewExecutor(registry, processReg, variableReg)
 
 	cli := codecraftersshellgo.NewCLI(in, out, errOut, executor, completer, history)
 

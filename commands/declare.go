@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-const KeyValuePairRegex = "^_?([a-zA-Z_]*)=([^=\\s]*)$"
+const KeyValuePairRegex = "^([A-Za-z_][A-Za-z0-9_]*)=(.*)$"
 
 type VariableRegistry interface {
 	Get(name string) (string, bool)

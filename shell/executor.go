@@ -14,10 +14,11 @@ import (
 type Executor struct {
 	Commands  *commands.Registry
 	Processes *commands.ProcessTable
+	Variables *Variables
 }
 
-func NewExecutor(commands *commands.Registry, processes *commands.ProcessTable) *Executor {
-	return &Executor{Commands: commands, Processes: processes}
+func NewExecutor(commands *commands.Registry, processes *commands.ProcessTable, variables *Variables) *Executor {
+	return &Executor{Commands: commands, Processes: processes, Variables: variables}
 }
 
 func (e *Executor) Execute(cl *parser.CommandLine, out io.Writer, errOut io.Writer) bool {
@@ -31,6 +32,8 @@ func (e *Executor) Execute(cl *parser.CommandLine, out io.Writer, errOut io.Writ
 }
 
 func (e *Executor) runCommand(cl *parser.CommandLine, in io.Reader, out io.Writer, errOut io.Writer) bool {
+	e.expand(cl)
+
 	stdout := out
 	stderr := errOut
 	cleanup := func() {}
@@ -160,4 +163,32 @@ func applyRedirect(r *parser.Redirect, out io.Writer, errOut io.Writer) (io.Writ
 	}
 
 	return variableOut, variableErrOut, cleanup, true
+}
+
+func (e *Executor) expand(cl *parser.CommandLine) {
+	var expanded []string
+
+	for _, arg := range cl.Args {
+		if strings.Contains(arg, "$") {
+			prefix, variable, ok := strings.Cut(arg, "$")
+
+			if ok {
+				v, ok := e.Variables.Get(variable)
+
+				if ok {
+					expanded = append(expanded, prefix+v)
+				} else {
+					expanded = append(expanded, prefix)
+				}
+
+				continue
+			}
+
+			expanded = append(expanded, arg)
+		}
+
+		expanded = append(expanded, arg)
+	}
+
+	cl.Args = expanded
 }
