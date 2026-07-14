@@ -5,11 +5,14 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/codecrafters-io/shell-starter-go/commands"
 	"github.com/codecrafters-io/shell-starter-go/parser"
 )
+
+const VariableRegex = "\\$\\{([A-Za-z_][A-Za-z0-9_]*)\\}|\\$([A-Za-z_][A-Za-z0-9_]*)"
 
 type Executor struct {
 	Commands  *commands.Registry
@@ -167,24 +170,35 @@ func applyRedirect(r *parser.Redirect, out io.Writer, errOut io.Writer) (io.Writ
 
 func (e *Executor) expand(cl *parser.CommandLine) {
 	var expanded []string
+	reg, err := regexp.Compile(VariableRegex)
+	replacer := strings.NewReplacer("$", "", "{", "", "}", "")
+
+	if err != nil {
+		return
+	}
 
 	for _, arg := range cl.Args {
 		if strings.Contains(arg, "$") {
-			prefix, variable, ok := strings.Cut(arg, "$")
+			expandedArgument := arg
 
-			if ok {
-				v, ok := e.Variables.Get(variable)
+			varCandidates := reg.FindAllString(arg, -1)
+
+			for _, varCandidate := range varCandidates {
+
+				varName := replacer.Replace(varCandidate)
+
+				v, ok := e.Variables.Get(varName)
 
 				if ok {
-					expanded = append(expanded, prefix+v)
+					expandedArgument = strings.ReplaceAll(expandedArgument, varCandidate, v)
 				} else {
-					expanded = append(expanded, prefix)
+					expandedArgument = strings.ReplaceAll(expandedArgument, varCandidate, "")
 				}
-
-				continue
 			}
 
-			expanded = append(expanded, arg)
+			expanded = append(expanded, expandedArgument)
+
+			continue
 		}
 
 		expanded = append(expanded, arg)
