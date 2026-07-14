@@ -33,7 +33,7 @@ func (d *Declare) Execute(args []string, out io.Writer, errOut io.Writer) bool {
 			return true
 		}
 
-		fmt.Fprintf(out, "declare -- %s=%s\n", pFlag[0], v)
+		fmt.Fprintf(out, "declare -- %s=\"%s\"\n", pFlag[0], v)
 
 		return true
 	}
