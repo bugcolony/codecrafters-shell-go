@@ -196,7 +196,9 @@ func (e *Executor) expand(cl *parser.CommandLine) {
 				}
 			}
 
-			expanded = append(expanded, expandedArgument)
+			if len(expandedArgument) > 0 {
+				expanded = append(expanded, expandedArgument)
+			}
 
 			continue
 		}
